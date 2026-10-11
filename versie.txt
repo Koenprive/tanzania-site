@@ -1,1 +1,1 @@
-Volledige test GitHub → Netlify: 12:51:37 UTC (test 2)
+Test 3 — automatische deploy na koppeling: 12:53:41 UTC
