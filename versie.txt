@@ -1,1 +1,1 @@
-Deploy-test vanuit GitHub: 2026-10-11T12:43:13Z
+Volledige test GitHub → Netlify: 12:51:37 UTC (test 2)
