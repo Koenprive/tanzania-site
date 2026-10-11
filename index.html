@@ -1200,6 +1200,22 @@ footer{background:var(--ink);color:rgba(255,255,255,.55);padding:3.5rem 0 calc(2
 .cijfer b{display:block;font-family:var(--display);font-size:2.1rem;font-weight:400;letter-spacing:-.03em;line-height:1;color:var(--ink);}
 .cijfer span{display:block;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:.55rem;}
 
+/* originelen (volle resolutie) */
+.orig-kaart{margin-top:1.1rem;padding:.95rem 1rem;border:1px solid var(--line);border-radius:14px;background:var(--surface);}
+.orig-schakel{display:flex;align-items:flex-start;gap:.85rem;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.orig-schakel input{position:absolute;opacity:0;width:0;height:0;}
+.orig-knop{flex:none;width:42px;height:24px;border-radius:12px;background:var(--line);position:relative;transition:background .2s;margin-top:.1rem;}
+.orig-knop::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s;}
+.orig-schakel input:checked + .orig-knop{background:var(--accent);}
+.orig-schakel input:checked + .orig-knop::after{transform:translateX(18px);}
+.orig-schakel input:focus-visible + .orig-knop{outline:2px solid var(--accent);outline-offset:2px;}
+.orig-tekst b{display:block;font-size:.86rem;font-weight:600;color:var(--ink);}
+.orig-tekst small{display:block;font-size:.74rem;color:var(--muted);line-height:1.55;margin-top:.15rem;max-width:52ch;}
+.orig-rij{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin-top:.8rem;padding-top:.8rem;border-top:1px solid var(--line-soft);}
+.orig-stand{font-size:.76rem;color:var(--ink-2);margin-right:auto;font-variant-numeric:tabular-nums;}
+.btn-ghost.klein{padding:.45rem .9rem;font-size:.76rem;}
+.lb-meta a{pointer-events:auto;color:rgba(255,255,255,.8);text-decoration:underline;text-underline-offset:3px;}
+
 /* back-up */
 .backup-row{display:flex;gap:.7rem;flex-wrap:wrap;align-items:center;margin-top:1.6rem;padding-top:1.4rem;border-top:1px solid var(--line);}
 .backup-row p{font-size:.78rem;color:var(--muted);margin-right:auto;max-width:44ch;line-height:1.6;}
@@ -2176,6 +2192,21 @@ body.sleepbezig{-webkit-user-select:none;user-select:none;cursor:grabbing;}
       <span class="up-bar"><i id="uploadBar"></i></span>
     </div>
 
+    <div class="orig-kaart reveal" id="origKaart">
+      <label class="orig-schakel">
+        <input type="checkbox" id="origSchakel" autocomplete="off">
+        <span class="orig-knop" aria-hidden="true"></span>
+        <span class="orig-tekst"><b>Ook origineel bewaren</b><small>Na de webversies gaat het onbewerkte bestand (volle resolutie) op de achtergrond mee. Kost veel data: alleen op wifi aanzetten. Staat na herladen weer uit.</small></span>
+      </label>
+      <div class="orig-rij">
+        <span class="orig-stand" id="origStand"></span>
+        <label class="btn-ghost klein" style="cursor:pointer" title="Thuis op wifi: kies de originele bestanden, ze worden op opnametijd aan de foto&#39;s in het album gekoppeld">Originelen aanvullen
+          <input type="file" accept="image/*" multiple style="display:none" onchange="origineelAanvullen(event)">
+        </label>
+        <button type="button" class="btn-ghost klein" id="origLijstKnop" hidden onclick="origineelLijst()">Lijst met originelen</button>
+      </div>
+    </div>
+
     <div class="backup-row reveal">
       <p>Alle foto&#39;s en verhalen staan online opgeslagen. Maak af en toe een reservekopie &mdash; dan ben je nooit iets kwijt.</p>
       <button class="btn-ghost" onclick="exportData()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 11l5 5 5-5"/><path d="M12 16V3"/></svg> Reservekopie</button>
@@ -2936,12 +2967,15 @@ function samenvoegRecords(basis, online, lokaal) {
     const blijft = src => !(bMap.has(src) && !lMap.has(src)) && !(bMap.has(src) && !oMap.has(src));
     const kies = src => {
       const l = lMap.get(src), o = oMap.get(src), b = bMap.get(src);
+      const orig = (l && l.o) || (o && o.o);   // een origineel gaat nooit verloren, van welke kant het ook komt
       if (l && o && b && tekst(l) === tekst(b) && tekst(o) !== tekst(b)) {
         // alleen de ander heeft deze foto veranderd: zijn velden overnemen in ons object
         Object.keys(l).forEach(k => delete l[k]);
         Object.assign(l, o);
       }
-      return l || o;
+      const r = l || o;
+      if (r && orig && !r.o) r.o = orig;
+      return r;
     };
     const volgordeL = L.filter(p => bMap.has(p.src)).map(p => p.src).join('\n');
     const volgordeB = B.filter(p => lMap.has(p.src)).map(p => p.src).join('\n');
@@ -3106,7 +3140,17 @@ function bewaarLokaleKopie(record) {
   try { localStorage.setItem('tz_kopie', JSON.stringify({t: Date.now(), record: record})); } catch(e) {}
 }
 
-async function savePhotosToCloud() {
+// Nooit twee keer tegelijk bewaren: een reeks op de achtergrond (originelen) en
+// een verhaal dat net wordt opgeslagen zouden elkaars wijziging kunnen
+// overschrijven (de tweede leest 'vers' van vóór de eerste). Daarom op volgorde.
+var _bewaarKetting = Promise.resolve();
+function savePhotosToCloud() {
+  const vorige = _bewaarKetting;
+  let klaar;
+  _bewaarKetting = new Promise(r => { klaar = r; });
+  return vorige.catch(() => {}).then(bewaarKern).finally(klaar);
+}
+async function bewaarKern() {
   if (!_keys) throw new Error('vergrendeld');
 
   // Nooit schrijven als er nog nooit met succes gelezen is: anders zou een
@@ -3866,7 +3910,8 @@ async function addPhotos(id, event) {
     if (!alles && ok) items = items.filter(it => dubbel.indexOf(it) < 0);
   }
 
-  const added = [];
+  const added = [], origLijst = [];
+  const metOrig = origWil();
   let klaar = 0, mislukt = 0, vol = false, gestopt = 0;
   uploadBegin();
   for (const it of items) {
@@ -3877,6 +3922,7 @@ async function addPhotos(id, event) {
       if (rec) {
         voegOpTijdIn(id, rec);
         added.push(rec);
+        if (metOrig) origLijst.push({src: rec.src, file: it.file});
         wachtrijZet(id, rec);
         updateCount(id);
         renderCarousel(id);
@@ -3895,9 +3941,10 @@ async function addPhotos(id, event) {
   let melding = added.length + ' foto' + (added.length === 1 ? '' : "'s") + ' toegevoegd';
   if (mislukt) melding += ' · ' + mislukt + ' mislukt (probeer die zo nog eens)';
   if (gestopt) melding += ' · ' + gestopt + ' niet geüpload (' + (vol ? 'opslag vol' : 'gestopt') + ')';
+  let bewaard = false;
   if (added.length && !vol) {
     toonVoortgang('Bewaren…', items.length, items.length);
-    const bewaard = await bewaarNaUpload(added.map(rec => ({id: id, rec: rec})));
+    bewaard = await bewaarNaUpload(added.map(rec => ({id: id, rec: rec})));
     if (!bewaard) melding = added.length + ' foto' + (added.length === 1 ? '' : "'s") + ' geüpload, maar NIET bewaard';
   } else if (vol) melding = added.length + ' foto' + (added.length === 1 ? '' : "'s") + ' geüpload, maar de opslag is vol';
   verbergVoortgang(melding);
@@ -3909,6 +3956,7 @@ async function addPhotos(id, event) {
       .sort((a, b) => a.idx - b.idx);
     nextStory();
   }
+  if (bewaard && origLijst.length) origineelNaUpload(origLijst);
 }
 
 // ── ALLES IN EEN KEER: dag bepalen uit de opnamedatum ──
@@ -3949,7 +3997,8 @@ async function addPhotosAuto(event) {
   }
 
   const geraakt = new Set();
-  const toegevoegd = [];
+  const toegevoegd = [], origLijst = [];
+  const metOrig = origWil();
   let klaar = 0, gelukt = 0, mislukt = 0, vol = false, gestopt = 0;
   uploadBegin();
   for (const it of items) {
@@ -3960,6 +4009,7 @@ async function addPhotosAuto(event) {
       if (rec) {
         voegOpTijdIn(it.day, rec);
         toegevoegd.push({id: it.day, rec: rec});
+        if (metOrig) origLijst.push({src: rec.src, file: it.file});
         wachtrijZet(it.day, rec);
         geraakt.add(it.day);
         gelukt++;
@@ -3985,6 +4035,220 @@ async function addPhotosAuto(event) {
   if (mislukt) melding += ' · ' + mislukt + ' mislukt';
   if (!bewaard) melding = gelukt + ' foto\u2019s geüpload, maar NIET bewaard';
   verbergVoortgang(melding);
+  if (bewaard && toegevoegd.length && origLijst.length) origineelNaUpload(origLijst);
+}
+
+// ── ORIGINELEN (volle resolutie) ──
+// De site werkt overal met de webversie (1800 px). Met de schakelaar "Ook origineel
+// bewaren" gaat na de webversies ook het onbewerkte bestand naar imgbb; alleen de
+// imgbb-id wordt bewaard (veld `o`, ±16 bytes per foto). De site toont originelen
+// nergens: alleen de link in de lightbox, de lijst en de zip gebruiken ze.
+const ORIG_MAX_MB = 30, ORIG_TUSSEN = 10;
+var _origBezig = false;
+
+function origWil() { const s = document.getElementById('origSchakel'); return !!(s && s.checked); }
+function origineelUrl(p) {
+  if (!p || !p.o) return null;
+  return /^https?:\/\//.test(p.o) ? p.o : 'https://i.ibb.co/' + p.o + '/o.jpg';
+}
+// Android/Chrome weten of je op mobiel internet zit; iPhone niet (daar is de schakelaar zelf de wifi-keuze).
+function opMobielNetwerk() {
+  const c = navigator.connection;
+  if (!c) return false;
+  return c.type === 'cellular' || c.saveData === true;
+}
+function origExt(file) {
+  const t = (file && file.type || '').toLowerCase();
+  if (/png/.test(t)) return 'png';
+  if (/webp/.test(t)) return 'webp';
+  if (/heic|heif/.test(t)) return 'heic';
+  if (/gif/.test(t)) return 'gif';
+  return 'jpg';
+}
+// Het bestand ongewijzigd uploaden (geen shrink). Geeft de imgbb-id terug, of de
+// hele URL als die er anders uitziet dan verwacht; null als het misging.
+async function uploadOrigineel(file) {
+  if (!file || file.size > ORIG_MAX_MB * 1024 * 1024) return null;
+  const form = new FormData();
+  form.append('image', file, 'o.' + origExt(file));
+  form.append('key', _keys.imgbb);
+  const res = await fetch('https://api.imgbb.com/1/upload', {method: 'POST', body: form});
+  const data = await res.json();
+  if (!data.success || !data.data) return null;
+  const url = (data.data.image && data.data.image.url) || data.data.url || data.data.display_url;
+  if (!url) return null;
+  const m = url.match(/^https:\/\/i\.ibb\.co\/([A-Za-z0-9]+)\/o\.jpg$/);
+  return m ? m[1] : url;
+}
+
+function verhaalEditorOpen() {
+  const m = document.getElementById('storyModal');
+  return !!(_story || (m && !m.hidden));
+}
+// De o's in de lijst zetten (op src, ook na 'opnieuw-geladen') en bewaren.
+// Wacht zolang de verhaal-editor open staat (max 10 min): die bewaart zelf, en
+// zo komen de twee niet tegelijk bij jsonbin.
+async function bewaarOriginelen(map) {
+  if (!map || !Object.keys(map).length) return true;
+  const geraakt = new Set();
+  const zet = () => { let n = 0; DAYS.forEach(d => (photos[d.id] || []).forEach(p => { if (map[p.src]) { p.o = map[p.src]; geraakt.add(d.id); n++; } })); return n; };
+  zet();
+  geraakt.forEach(id => renderCarousel(id));   // zodat de lightbox de link 'origineel' kent
+  const tot = Date.now() + 10 * 60 * 1000;
+  while (verhaalEditorOpen() && Date.now() < tot) await new Promise(r => setTimeout(r, 500));
+  for (let poging = 1; poging <= 4; poging++) {
+    zet();
+    try { await savePhotosToCloud(); renderOriginelen(); return true; }
+    catch (e) {
+      const msg = e && e.message;
+      if (msg === 'opslag-vol') return false;
+      if (msg === 'opnieuw-geladen' && poging < 4) continue;
+      if (poging < 4) await new Promise(r => setTimeout(r, 1500 * poging));
+    }
+  }
+  return false;
+}
+
+// Tweede reeks na de gewone upload: [{src, file}] één voor één, met eigen voortgang
+// en stopknop. Elke ORIG_TUSSEN bewaren, en aan het eind.
+async function origineelReeks(lijst, kop) {
+  if (_origBezig) { alert('Er loopt al een reeks originelen.'); return null; }
+  _origBezig = true;
+  uploadBegin();
+  const map = {};
+  let klaar = 0, gelukt = 0, mislukt = 0, gestopt = 0, nietBewaard = false;
+  try {
+    for (const it of lijst) {
+      if (_upStop) { gestopt = lijst.length - klaar; break; }
+      toonVoortgang((kop || 'Originelen') + '… ' + (klaar + 1) + ' van ' + lijst.length + ' (achtergrond — mag je stoppen)', klaar, lijst.length);
+      try {
+        const o = await uploadOrigineel(it.file);
+        if (o) { map[it.src] = o; gelukt++; } else mislukt++;
+      } catch (e) { console.error('Origineel mislukt', e); mislukt++; }
+      klaar++;
+      if (gelukt && gelukt % ORIG_TUSSEN === 0 && klaar < lijst.length) {
+        toonVoortgang('Originelen tussentijds bewaren…', klaar, lijst.length);
+        if (!await bewaarOriginelen(map)) nietBewaard = true;
+      }
+    }
+  } finally {
+    uploadEinde();
+  }
+  toonVoortgang('Originelen bewaren…', lijst.length, lijst.length);
+  if (!await bewaarOriginelen(map)) nietBewaard = true;
+  _origBezig = false;
+  let m = gelukt + ' origine' + (gelukt === 1 ? 'el' : 'len') + ' bewaard';
+  if (nietBewaard) m = gelukt + ' originelen geüpload, maar NIET bewaard — probeer het straks via “Originelen aanvullen”';
+  if (mislukt) m += ' · ' + mislukt + ' mislukt';
+  if (gestopt) m += ' · ' + gestopt + ' niet gedaan (gestopt)';
+  if (mislukt || gestopt) m += ' — later aanvullen via “Originelen aanvullen”';
+  verbergVoortgang(m);
+  renderOriginelen();
+  return {gelukt: gelukt, mislukt: mislukt, gestopt: gestopt};
+}
+
+// Na addPhotos/addPhotosAuto, alleen als de webversies bewaard zijn.
+async function origineelNaUpload(lijst) {
+  if (!lijst || !lijst.length) return;
+  if (opMobielNetwerk()) {
+    verbergVoortgang('Originelen overgeslagen: je zit op mobiel internet. Thuis op wifi aanvullen via “Originelen aanvullen”.');
+    return;
+  }
+  await origineelReeks(lijst, 'Originelen');
+}
+
+// Thuis op wifi: de originele bestanden kiezen; op opnametijd (EXIF) koppelen aan
+// de foto's in het album die nog geen origineel hebben. Exact, dan ±1 s, ±2 s.
+async function origineelAanvullen(event) {
+  const files = Array.from(event.target.files || []);
+  event.target.value = '';
+  if (!files.length) return;
+  if (!await ensureUnlocked('Wachtwoord om originelen toe te voegen:')) return;
+  toonVoortgang('Datums uitlezen…', 0, files.length);
+  const items = await leesEnSorteer(files);
+  const opTijd = {};
+  DAYS.forEach(d => (photos[d.id] || []).forEach(p => {
+    const t = p.taken ? Date.parse(p.taken) : NaN;
+    if (isNaN(t)) return;
+    const s = Math.round(t / 1000);
+    (opTijd[s] = opTijd[s] || []).push(p);
+  }));
+  const gebruikt = new Set();
+  const lijst = [];
+  let al = 0, onbekend = 0, zonderTijd = 0, mb = 0;
+  items.forEach(it => {
+    const t = it.meta && it.meta.taken ? Date.parse(it.meta.taken) : NaN;
+    if (isNaN(t)) { zonderTijd++; return; }
+    const s = Math.round(t / 1000);
+    let p = null;
+    for (const d of [0, 1, -1, 2, -2]) {
+      const kand = (opTijd[s + d] || []).filter(q => !gebruikt.has(q));
+      if (kand.length) { p = kand[0]; break; }
+    }
+    if (!p) { onbekend++; return; }
+    gebruikt.add(p);
+    if (p.o) { al++; return; }
+    lijst.push({src: p.src, file: it.file});
+    mb += it.file.size;
+  });
+  if (!lijst.length) {
+    verbergVoortgang('');
+    alert('Geen enkel bestand hoort bij een albumfoto zonder origineel.\n\n' +
+      (al ? al + ' ' + (al === 1 ? 'heeft' : 'hebben') + ' al een origineel.\n' : '') +
+      (onbekend ? onbekend + ' ' + (onbekend === 1 ? 'past' : 'passen') + ' op geen enkele opnametijd in het album.\n' : '') +
+      (zonderTijd ? zonderTijd + ' zonder opnametijd.\n' : ''));
+    return;
+  }
+  const vraag = lijst.length + ' van de ' + files.length + ' bestanden ' + (lijst.length === 1 ? 'hoort' : 'horen') + ' bij een albumfoto zonder origineel (±' + Math.round(mb / 1024 / 1024) + ' MB uploaden).' +
+    (al ? '\n' + al + ' al aanwezig' : '') + (onbekend ? '\n' + onbekend + ' niet gevonden in het album (opnametijd)' : '') + (zonderTijd ? '\n' + zonderTijd + ' zonder opnametijd' : '') +
+    '\n\nNu uploaden?';
+  if (!confirm(vraag)) { verbergVoortgang(''); return; }
+  await origineelReeks(lijst, 'Originelen aanvullen');
+}
+
+function origineelAantal() {
+  let n = 0, tot = 0;
+  DAYS.forEach(d => (photos[d.id] || []).forEach(p => { tot++; if (p.o) n++; }));
+  return {n: n, tot: tot};
+}
+function renderOriginelen() {
+  const st = document.getElementById('origStand');
+  const knop = document.getElementById('origLijstKnop');
+  if (!st) return;
+  const c = origineelAantal();
+  st.textContent = c.tot ? 'Originelen: ' + c.n + ' van ' + c.tot + ' foto’s' : '';
+  if (knop) knop.hidden = !c.n;
+}
+
+// HTML-bestand per dag met miniaturen en links (origineel / webversie), en bovenaan
+// alleen de URL's voor een downloadprogramma.
+function origineelLijst() {
+  const blokken = [], urls = [];
+  DAYS.forEach((d, di) => {
+    const lijst = (photos[d.id] || []).filter(p => p.o);
+    if (!lijst.length) return;
+    const rijen = lijst.map((p, i) => {
+      const u = origineelUrl(p);
+      urls.push(u);
+      const tijd = p.taken ? fmtTaken(p.taken) : '';
+      return '<li><a href="' + esc(u) + '" target="_blank" rel="noopener"><img src="' + esc(kleinUrl(p, 160)) + '" alt="" loading="lazy" width="80" height="60"></a>' +
+        '<span>' + esc(tijd) + (p.place ? ' · ' + esc(p.place) : '') + '<br><a href="' + esc(u) + '" target="_blank" rel="noopener">origineel</a> · <a href="' + esc(p.src) + '" target="_blank" rel="noopener">webversie</a></span></li>';
+    }).join('');
+    blokken.push('<h2>' + esc(zipDagMap(d, di + 1)) + ' <small>(' + lijst.length + ')</small></h2><ul>' + rijen + '</ul>');
+  });
+  if (!urls.length) { alert('Er zijn nog geen originelen.'); return; }
+  const html = '<!DOCTYPE html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Originelen — Tanzania &amp; Zanzibar 2026</title>' +
+    '<style>body{font-family:-apple-system,Segoe UI,Inter,sans-serif;max-width:900px;margin:2rem auto;padding:0 1rem;color:#191512;background:#FAF8F4}h1{font-weight:600}h2{font-size:1.05rem;margin-top:2rem}small{color:#807668;font-weight:400}' +
+    'textarea{width:100%;height:9rem;font:12px/1.4 monospace;border:1px solid #E8E2D7;border-radius:8px;padding:.6rem}ul{list-style:none;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.6rem}li{display:flex;gap:.6rem;align-items:center;font-size:.8rem;background:#fff;border:1px solid #E8E2D7;border-radius:10px;padding:.5rem}' +
+    'li img{width:80px;height:60px;object-fit:cover;border-radius:6px;background:#eee}a{color:#B4622D}p{color:#807668;font-size:.85rem}</style></head><body>' +
+    '<h1>Originelen — Tanzania &amp; Zanzibar 2026</h1><p>' + urls.length + ' originelen in volle resolutie. De lijst hieronder kun je in een downloadprogramma plakken.</p>' +
+    '<textarea readonly>' + esc(urls.join('\n')) + '</textarea>' + blokken.join('') + '</body></html>';
+  const blob = new Blob([html], {type: 'text/html'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'Tanzania-Zanzibar-2026-originelen.html'; a.rel = 'noopener';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
 function updateCount(id) {
@@ -4260,9 +4524,19 @@ function refreshLightbox() {
   if (el.complete && el.naturalWidth) el.onload();
 
   document.getElementById('lbCap').innerHTML = metaLine(img) + (img.caption ? '<p>' + esc(img.caption) + '</p>' : '');
-  document.getElementById('lbMeta').textContent =
+  const lbMeta = document.getElementById('lbMeta');
+  lbMeta.textContent =
     (img.spot ? 'Spotlijst  —  ' : (day ? day.days + ' · ' + day.title + '  —  ' : '')) +
     (_lb.i + 1) + ' / ' + list.length;
+  const bronFoto = (!img.isPdf && !img.spot && photos[_lb.id] && typeof img.idx === 'number') ? photos[_lb.id][img.idx] : null;
+  const origU = (typeof origineelUrl === 'function') ? origineelUrl((bronFoto && bronFoto.o) ? bronFoto : img) : null;
+  if (origU) {
+    lbMeta.appendChild(document.createTextNode('  ·  '));
+    const a = document.createElement('a');
+    a.href = origU; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'origineel';
+    a.title = 'Het onbewerkte bestand in volle resolutie openen';
+    lbMeta.appendChild(a);
+  }
   const isSpot = !!img.spot;
   document.getElementById('lbEdit').hidden = !!img.isPdf || isSpot;
   const favKnop = document.getElementById('lbFav');
@@ -4593,7 +4867,7 @@ function renderCarousel(id) {
   if (!el) return;
   const day = DAYS.find(d => d.id === id);
   const pdfLayer = basisFotos(id).map(x => ({src: x.src, caption:"", isPdf:true, pdfIdx: x.i}));
-  const userLayer = photos[id].map((p,i) => ({src:p.src, caption:p.caption, isPdf:false, idx:i, lat:p.lat, lon:p.lon, place:p.place, taken:p.taken, fav:p.fav}));
+  const userLayer = photos[id].map((p,i) => ({src:p.src, caption:p.caption, isPdf:false, idx:i, lat:p.lat, lon:p.lon, place:p.place, taken:p.taken, fav:p.fav, o:p.o}));
   const all = [...userLayer, ...pdfLayer];
   _slides[id] = all;
   el.innerHTML = buildRaster(id, all);
@@ -7348,6 +7622,15 @@ async function downloadAlleFotos() {
   if (!tot) return;
   if (!await ensureUnlocked('Wachtwoord om alle foto’s te downloaden:')) return;
   if (_zipBezig) return;
+  // Zijn er originelen? Dan kiezen: volle resolutie (groot) of de webversie.
+  let metOrig = false;
+  const nOrig = (typeof origineelAantal === 'function') ? origineelAantal().n : 0;
+  if (nOrig) {
+    const mbWeb = Math.round(tot * 0.5), mbOrig = Math.round(nOrig * 4 + (tot - nOrig) * 0.5);
+    metOrig = confirm(nOrig + ' van de ' + tot + ' foto’s ' + (nOrig === 1 ? 'heeft' : 'hebben') + ' een origineel in volle resolutie.\n\n' +
+      'OK = originelen waar beschikbaar (groot: ±' + mbOrig + ' MB)\n' +
+      'Annuleren = webversie van alle foto’s (±' + mbWeb + ' MB)');
+  }
   _zipBezig = true; _zipStop = false;
   const knop = document.getElementById('boekZipKnop');
   const label = knop ? knop.querySelector('span') : null;
@@ -7371,9 +7654,14 @@ async function downloadAlleFotos() {
         const k = volgende++;
         const f = lijst[k];
         try {
-          const blob = await haalFotoBytes(f.p.src);
+          let bron = f.p.src, blob = null;
+          if (metOrig && f.p.o) {
+            bron = origineelUrl(f.p);
+            try { blob = await haalFotoBytes(bron); } catch (e) { blob = null; bron = f.p.src; }   // origineel onbereikbaar → webversie
+          }
+          if (!blob) blob = await haalFotoBytes(bron);
           const buf = new Uint8Array(await blob.arrayBuffer());
-          const naam = zipDagMap(f.d, f.di) + '/' + zipFotoNaam(f.p, f.di, f.i, zipExt(f.p.src, blob.type));
+          const naam = zipDagMap(f.d, f.di) + '/' + zipFotoNaam(f.p, f.di, f.i, zipExt(bron, blob.type));
           const t = f.p.taken ? new Date(f.p.taken) : null;
           bestanden[k] = {naam: naam, data: blob, grootte: buf.length, crc: zipCrc32(buf), datum: (t && !isNaN(t.getTime())) ? t : new Date()};
           bytes += buf.length;
@@ -7396,7 +7684,7 @@ async function downloadAlleFotos() {
     melden('Zip maken…');
     toonVoortgang('Zip maken…', tot, tot);
     const zip = maakZip(items);
-    const naam = 'Tanzania-Zanzibar-2026-fotos' + (gestopt ? '-deel' : '') + '.zip';
+    const naam = 'Tanzania-Zanzibar-2026-fotos' + (metOrig ? '-origineel' : '') + (gestopt ? '-deel' : '') + '.zip';
     const url = URL.createObjectURL(zip);
     const a = document.createElement('a');
     a.href = url; a.download = naam; a.rel = 'noopener';
@@ -8083,7 +8371,7 @@ function renderCijfers() {
   const grid = document.getElementById('cijfersGrid');
   if (!sec || !grid) return;
   const c = reisCijfers();
-  if (!c.n && !c.dieren) { sec.hidden = true; return; }
+  if (!c.n && !c.dieren) { sec.hidden = true; if (typeof renderOriginelen === 'function') renderOriginelen(); return; }
   sec.hidden = false;
   const vak = [];
   vak.push(['<b>' + c.n + '</b>', "Foto's"]);
@@ -8095,6 +8383,7 @@ function renderCijfers() {
     vak.push(['<b>' + u + '</b>', 'Vroegste foto']);
   }
   grid.innerHTML = vak.map(v => '<div class="cijfer">' + v[0] + '<span>' + v[1] + '</span></div>').join('');
+  if (typeof renderOriginelen === 'function') renderOriginelen();
 }
 
 // ══════════ VANDAAG ══════════
