@@ -1873,6 +1873,13 @@ nav{position:-webkit-sticky;position:sticky;}
 .weerknop:hover{background:var(--accent-weak);border-color:var(--accent)}
 .weerknop:active{transform:scale(.94)}
 .nav-links+.weerknop{margin-left:0}
+.nav-knoppen{display:flex;gap:8px;align-items:center;margin-left:auto;flex-shrink:0}
+.nav-knoppen .weerknop{margin-left:0}
+.slotknop{color:var(--muted)}
+.slotknop .slot-open{display:none}
+.slotknop.open{color:var(--green);border-color:var(--green);background:#EEF6EE}
+.slotknop.open .slot-dicht{display:none}
+.slotknop.open .slot-open{display:block}
 #weer{position:fixed;inset:0;z-index:400;background:rgba(7,12,15,.9);backdrop-filter:blur(8px);display:flex;align-items:flex-start;justify-content:center;padding:calc(18px + env(safe-area-inset-top,0px)) 18px calc(18px + env(safe-area-inset-bottom,0px));overflow-y:auto;overscroll-behavior:contain}
 #weer[hidden]{display:none}
 .weerin{position:relative;width:min(640px,100%);margin:auto;background:var(--surface);color:var(--ink);border-radius:22px;box-shadow:0 30px 80px rgba(0,0,0,.5);overflow:hidden;animation:weerin .32s ease}
@@ -2112,7 +2119,8 @@ body.sleepbezig{-webkit-user-select:none;user-select:none;cursor:grabbing;}
       <li><button class="tabknop" data-tab="spots" onclick="toonTab('spots')">Spots</button></li>
       <li><button class="tabknop" data-tab="info" onclick="toonTab('info')">Info</button></li>
     </ul>
-    <button class="weerknop" id="weerKnop" type="button" title="Het weer in Tanzania" aria-label="Toon het weer in Tanzania en op Zanzibar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="9" r="3.2"/><path d="M9 2.6v1.6M9 13.8v1.6M2.6 9h1.6M13.8 9h1.6M4.5 4.5l1.1 1.1M12.4 12.4l1.1 1.1M13.5 4.5l-1.1 1.1M5.6 12.4 4.5 13.5"/><path d="M12.2 20.5H18a3 3 0 1 0-.6-5.9 4.2 4.2 0 0 0-8-.9 3.4 3.4 0 0 0 .8 6.8h2Z" fill="var(--surface)"/></svg></button>
+    <span class="nav-knoppen"><button class="weerknop slotknop" id="slotKnop" type="button" onclick="slotKlik()" title="Vergrendeld — tik om in te loggen" aria-label="Inloggen of vergrendelen"><svg class="slot-dicht" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2.2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15.5" r="1.2" fill="currentColor"/></svg><svg class="slot-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2.2"/><path d="M8 10.5V7.5a4 4 0 0 1 7.6-1.8"/><circle cx="12" cy="15.5" r="1.2" fill="currentColor"/></svg></button>
+    <button class="weerknop" id="weerKnop" type="button" title="Het weer in Tanzania" aria-label="Toon het weer in Tanzania en op Zanzibar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="9" r="3.2"/><path d="M9 2.6v1.6M9 13.8v1.6M2.6 9h1.6M13.8 9h1.6M4.5 4.5l1.1 1.1M12.4 12.4l1.1 1.1M13.5 4.5l-1.1 1.1M5.6 12.4 4.5 13.5"/><path d="M12.2 20.5H18a3 3 0 1 0-.6-5.9 4.2 4.2 0 0 0-8-.9 3.4 3.4 0 0 0 .8 6.8h2Z" fill="var(--surface)"/></svg></button></span>
   </div>
   <span class="nav-voortgang" id="navVoortgang"></span>
 </nav>
@@ -4267,6 +4275,29 @@ function updateCount(id) {
 // = niets te wijzigen, ook niet door de JavaScript te omzeilen.
 var _pogingen = 0, _blokTot = 0;
 
+// Slotje in de menubalk: dicht = nog niet ingelogd, open (groen) = ingelogd.
+// Tikken: inloggen, of (als je ingelogd bent) weer vergrendelen.
+function toonSlot() {
+  const k = document.getElementById('slotKnop');
+  if (!k) return;
+  k.classList.toggle('open', !!_keys);
+  k.title = _keys ? 'Ingelogd \u2014 tik om te vergrendelen' : 'Vergrendeld \u2014 tik om in te loggen';
+}
+async function slotKlik() {
+  if (_keys) {
+    if (confirm('Je bent ingelogd. Weer vergrendelen?\n\nDaarna wordt bij de volgende wijziging opnieuw om het wachtwoord gevraagd.')) {
+      _keys = null; _schrijfKop = null;
+      toonSlot();
+      if (typeof toonVolgordeMelding === 'function') toonVolgordeMelding('Vergrendeld');
+    }
+    return;
+  }
+  if (await ensureUnlocked('Wachtwoord om in te loggen:')) {
+    if (typeof toonVolgordeMelding === 'function') toonVolgordeMelding('Ingelogd');
+  }
+}
+document.addEventListener('DOMContentLoaded', toonSlot);
+
 async function ensureUnlocked(reden) {
   if (navigator.onLine === false) {
     alert('Je hebt nu geen internet.\n\nKijken kan gewoon, maar foto\u2019s toevoegen of iets aanpassen lukt pas weer als je verbinding hebt.');
@@ -4282,6 +4313,7 @@ async function ensureUnlocked(reden) {
   try {
     _keys = await ontsleutel(pw);
     _pogingen = 0;
+    toonSlot();
     if (!_geladen) { try { await loadPhotosFromCloud(); } catch(e2) {} }
     return true;
   } catch(e) {
