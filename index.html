@@ -144,16 +144,26 @@ img{max-width:100%;display:block;}
 .scroll-line::after{content:'';position:absolute;inset:0;background:#fff;animation:sweep 2.4s ease-in-out infinite;}
 
 /* ─────────── NAV ─────────── */
+:root{--nav-top:env(safe-area-inset-top,0px);--nav-h:60px;}
+@media (display-mode:standalone){:root{--nav-top:max(env(safe-area-inset-top,0px),14px);}}
 nav{
-  position:-webkit-sticky;position:sticky;top:0;z-index:100;
-  /* onder de statusbalk / Dynamic Island vandaan blijven op iPhone */
-  padding-top:env(safe-area-inset-top,0px);
+  position:-webkit-sticky;position:sticky;top:var(--nav-top);z-index:100;
+  /* Onder de statusbalk / Dynamic Island vandaan blijven op iPhone: de balk plakt
+     op --nav-top; het stuk daarboven wordt pas gevuld (nav::before) zodra de balk
+     vastzit, zodat er onder de hero geen lege ruimte staat (12 okt). */
   padding-left:env(safe-area-inset-left,0px);
   padding-right:env(safe-area-inset-right,0px);
   background:rgba(250,248,244,.82);
   backdrop-filter:saturate(180%) blur(16px);-webkit-backdrop-filter:saturate(180%) blur(16px);
   border-bottom:1px solid var(--line);
 }
+nav::before{
+  content:'';position:absolute;left:0;right:0;bottom:100%;height:var(--nav-top);
+  background:rgba(250,248,244,.82);
+  backdrop-filter:saturate(180%) blur(16px);-webkit-backdrop-filter:saturate(180%) blur(16px);
+  opacity:0;pointer-events:none;transition:opacity .15s;
+}
+nav.vast::before{opacity:1;}
 .nav-inner{
   max-width:var(--maxw);margin:0 auto;padding:0 24px;height:60px;
   display:flex;align-items:center;justify-content:space-between;gap:1rem;
@@ -169,7 +179,7 @@ nav{
 .nav-links a:hover{background:var(--accent-weak);color:var(--accent);}
 
 /* ─────────── SECTIONS ─────────── */
-section.band{padding:clamp(4rem,9vw,7rem) 0;scroll-margin-top:calc(66px + env(safe-area-inset-top,0px));}
+section.band{padding:clamp(4rem,9vw,7rem) 0;scroll-margin-top:calc(var(--nav-h) + 6px + var(--nav-top));}
 .band-alt{background:var(--surface-2);}
 .band-white{background:var(--surface);}
 .sec-head{max-width:640px;margin-bottom:clamp(2.2rem,4vw,3.2rem);}
@@ -808,10 +818,6 @@ footer{background:var(--ink);color:rgba(255,255,255,.55);padding:3.5rem 0 calc(2
 #storyMeta .slide-meta{color:var(--accent);margin-bottom:0;}
 #storyMeta .slide-meta .mdot{background:rgba(180,98,45,.5);}
 
-/* extra vangnet: in standalone-modus altijd wat lucht boven de balk */
-@media (display-mode:standalone){
-  nav{padding-top:max(env(safe-area-inset-top,0px),14px);}
-}
 
 /* ═══════════ UITBREIDINGEN ═══════════ */
 
@@ -1374,7 +1380,7 @@ nav{position:-webkit-sticky;position:sticky;}
 /* ═══════════ DAGENBALK ═══════════ */
 .dagbalk{
   position:-webkit-sticky;position:sticky;
-  top:calc(60px + env(safe-area-inset-top,0px));
+  top:calc(var(--nav-h) + var(--nav-top));
   z-index:60;margin:0 0 1.6rem;
   background:linear-gradient(to bottom,var(--bg) 72%,rgba(250,248,244,0));
   padding:.7rem 0 1rem;
@@ -2083,6 +2089,7 @@ body.sleepbezig{-webkit-user-select:none;user-select:none;cursor:grabbing;}
 /* compacter op de telefoon (12 okt): minder ruimte tussen de aftelteller en de balk met slotje/weer */
 @media(max-width:720px){
   .hero-inner{padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));}
+  :root{--nav-h:48px;}
   .nav-inner{height:48px;}
   .nav-knoppen .weerknop{width:36px;height:36px;}
   .nav-knoppen .weerknop svg{width:19px;height:19px;}
@@ -5918,10 +5925,16 @@ function toggleDag(id, forceer) {
   return open;
 }
 
+function navTopPx() {
+  const nav = document.querySelector("nav");
+  if (!nav) return 0;
+  const t = parseFloat(getComputedStyle(nav).top);
+  return isFinite(t) ? t : 0;
+}
 function dagOffset() {
   const nav = document.querySelector("nav");
   const balk = document.querySelector(".dagbalk");
-  const navH = nav ? nav.getBoundingClientRect().height : 60;
+  const navH = (nav ? nav.getBoundingClientRect().height : 60) + navTopPx();
   const balkH = balk ? balk.getBoundingClientRect().height : 0;
   return navH + balkH + 10;
 }
@@ -5938,7 +5951,7 @@ function naarBovenkantInhoud(direct) {
   const nav = document.querySelector('nav');
   const inhoud = document.getElementById('tabInhoud');
   if (!inhoud) return;
-  const y = inhoud.getBoundingClientRect().top + window.scrollY - (nav ? nav.offsetHeight : 60) + 1;
+  const y = inhoud.getBoundingClientRect().top + window.scrollY - (nav ? nav.offsetHeight + navTopPx() : 60) + 1;
   window.scrollTo({top: Math.max(0, y), behavior: direct ? 'auto' : 'smooth'});
 }
 
@@ -8714,7 +8727,7 @@ function toonTab(naam, stil) {
     const nav = document.querySelector('nav');
     const inhoud = document.getElementById('tabInhoud');
     if (inhoud && nav) {
-      const y = inhoud.getBoundingClientRect().top + window.scrollY - nav.offsetHeight + 1;
+      const y = inhoud.getBoundingClientRect().top + window.scrollY - nav.offsetHeight - navTopPx() + 1;
       window.scrollTo({top: Math.max(0, y), behavior: 'smooth'});
     }
     try { history.replaceState(null, '', '#' + naam); } catch(e) {}
@@ -8738,6 +8751,9 @@ function bijwerkVoortgang() {
   const y = window.scrollY;
   if (bar) bar.style.width = (hoogte > 40 ? Math.min(100, y / hoogte * 100) : 0) + '%';
   if (knop) knop.classList.toggle('zichtbaar', y > window.innerHeight * 0.9);
+  // zit de navigatiebalk vast bovenaan? dan de statusbalk erboven meekleuren (nav::before)
+  const nav = document.querySelector('nav');
+  if (nav) nav.classList.toggle('vast', nav.getBoundingClientRect().top <= navTopPx() + 0.5);
 }
 
 function naarBoven() {
