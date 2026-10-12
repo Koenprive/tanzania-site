@@ -5735,7 +5735,11 @@ function renderTimeline() {
   bouwDagbalk();
   DAYS.forEach(d => { renderCarousel(d.id); ververseBasisKnop(d.id); });
   markeerVandaag();
-  loadPhotosFromCloud();
+  // Bewust verversen (F5, trekken op de telefoon) = altijd vers ophalen; gewoon
+  // openen gebruikt de kopie van de laatste 5 minuten (spaart jsonbin-verzoeken).
+  let herladen = false;
+  try { const nav = performance.getEntriesByType('navigation')[0]; herladen = !!nav && nav.type === 'reload'; } catch (e) {}
+  loadPhotosFromCloud(herladen);
   initReveal();
 }
 
