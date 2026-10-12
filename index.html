@@ -1383,9 +1383,12 @@ nav{position:-webkit-sticky;position:sticky;}
 .dagbalk-rij::-webkit-scrollbar{display:none;}
 .dagchip{
   flex-shrink:0;background:var(--surface);border:1px solid var(--line);border-radius:100px;
-  padding:.4rem .85rem;font-family:var(--sans);font-size:.75rem;font-weight:600;
+  padding:.32rem .85rem .3rem;font-family:var(--sans);font-size:.75rem;font-weight:600;line-height:1.15;
   color:var(--ink-2);cursor:pointer;white-space:nowrap;transition:all .18s;
+  display:flex;flex-direction:column;align-items:center;gap:.08rem;
 }
+.dagchip-datum{font-size:.58rem;font-weight:500;letter-spacing:.03em;opacity:.7;}
+.dagchip.actief .dagchip-datum{opacity:.85;}
 .dagchip:hover{border-color:var(--accent);color:var(--accent);}
 .dagchip.actief{background:var(--ink);border-color:var(--ink);color:#fff;}
 .dagchip.vandaag{border-color:var(--accent);color:var(--accent);}
@@ -5889,7 +5892,7 @@ function bouwDagbalk() {
   if (!balk) return;
   const vandaag = currentDayId();
   balk.innerHTML = DAYS.map(d =>
-    `<button class="dagchip${d.id === vandaag ? " vandaag" : ""}" data-dag="${d.id}" onclick="springNaarDag('${d.id}')">${d.days}</button>`
+    `<button class="dagchip${d.id === vandaag ? " vandaag" : ""}" data-dag="${d.id}" onclick="springNaarDag('${d.id}')">${d.days}<span class="dagchip-datum">${d.date}</span></button>`
   ).join("");
 }
 
