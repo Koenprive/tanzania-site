@@ -6956,6 +6956,22 @@ function openDagFromHash() {
   return true;
 }
 
+// Tijdens de reis: bij een "gewone" opening van de site (geen dag- of fotolink,
+// geen andere tab in het adres) meteen de dagpagina van vandaag openen, zodat
+// iedereen direct ziet wat we die dag gedaan hebben. Terug/sluiten geeft het
+// overzicht met de vandaag-kaart. Testen kan met ?vandaag=2026-10-25.
+function openVandaagBijStart() {
+  if (_dagLinkGedaan) return false;
+  const h = location.hash || '';
+  if (h && h !== '#route') return false;
+  if (tripPhase() !== 'tijdens') return false;
+  const id = currentDayId();
+  if (!id || !DAYS.some(d => d.id === id)) return false;
+  _dagLinkGedaan = true;
+  setTimeout(() => springNaarDag(id), 350);
+  return true;
+}
+
 function toonQrGroot() {
   try { tekenQrOp('qrGrootDoek', 620, 2); } catch (e) { return; }
   const u = document.getElementById('qrUrl');
@@ -8551,8 +8567,8 @@ function markeerVandaag() {
     b.textContent = 'Vandaag';
     top.insertBefore(b, top.firstChild);
   }
-  // (de dag van vandaag gaat niet meer vanzelf open: het overzicht blijft het
-  //  startpunt, met de vandaag-kaart en de knop "Naar dag … in de route")
+  // (de dagpagina van vandaag gaat bij het openen van de site vanzelf open,
+  //  zie openVandaagBijStart; het overzicht met de vandaag-kaart zit erachter)
 }
 
 function jumpToToday() {
@@ -8737,6 +8753,7 @@ renderVerblijven();
 tekenHeroQr();
 toonTab(tabVanHash() || 'route', true);
 openDagFromHash();   // een dag-link (#d=dag5) meteen openen, nog vóór de foto's binnen zijn
+openVandaagBijStart(); // tijdens de reis: de dag van vandaag meteen open
 bijwerkVoortgang();
 
 
