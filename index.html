@@ -2080,6 +2080,13 @@ body.sleepbezig{-webkit-user-select:none;user-select:none;cursor:grabbing;}
 .cd-num{font-size:1.3rem;}
 .cd-lbl{margin-top:0;font-size:.56rem;}
 @media(max-width:720px){.hero-count{padding:.45rem .95rem;gap:.8rem;}.countdown-numbers{width:auto;gap:.75rem;justify-content:flex-start;}.cd-num{font-size:1.2rem;}}
+/* compacter op de telefoon (12 okt): minder ruimte tussen de aftelteller en de balk met slotje/weer */
+@media(max-width:720px){
+  .hero-inner{padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));}
+  .nav-inner{height:48px;}
+  .nav-knoppen .weerknop{width:36px;height:36px;}
+  .nav-knoppen .weerknop svg{width:19px;height:19px;}
+}
 /* onderweg en terugblik */
 .hero[data-fase="tijdens"]{min-height:clamp(180px,24svh,230px);}
 .hero[data-fase="tijdens"] .hero-title,.hero[data-fase="na"] .hero-title{display:none;}
