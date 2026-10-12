@@ -3795,7 +3795,9 @@ async function uploadNaarImgbb(file, meta) {
   // Geen thumb-link meer bewaren: wsrv.nl maakt de kleine versies. Coördinaten
   // op 5 decimalen (±1 m). Plaatsnaam alleen in het geheugen (binTekst laat hem
   // weg; vulPlaats zet hem bij het laden terug).
-  const rec = {src: data.data.display_url, caption: ''};
+  // Let op: display_url is bij grote foto's een verkleinde kopie (640 px, 'medium').
+  // De volle webversie (1800 px) staat op image.url.
+  const rec = {src: (data.data.image && data.data.image.url) || data.data.url || data.data.display_url, caption: ''};
   if (meta) {
     if (typeof meta.lat === 'number' && typeof meta.lon === 'number') {
       rec.lat = Math.round(meta.lat * 1e5) / 1e5; rec.lon = Math.round(meta.lon * 1e5) / 1e5;
@@ -6093,7 +6095,7 @@ async function spotFoto(id, event) {
       const dag = DAYS.find(d => d.id === currentDayId());
       spots[id] = {date: todayIso(), place: dag ? dag.loc : ''};
     }
-    spots[id].src = data.data.display_url;
+    spots[id].src = (data.data.image && data.data.image.url) || data.data.url || data.data.display_url;   // niet display_url: dat is 640 px
     renderSpots();
     bouwSpotSlides();
     renderCijfers();
