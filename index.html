@@ -2057,8 +2057,10 @@ body.sleepbezig{-webkit-user-select:none;user-select:none;cursor:grabbing;}
 .up-stop[hidden]{display:none;}
 .wachtrij-strook{bottom:calc(env(safe-area-inset-bottom) + 70px);}
 .wachtrij-strook svg{color:#E8B460;}
-.wachtrij-strook .ws-knop{flex:none;background:var(--accent);color:#fff;border:none;border-radius:100px;
-  padding:.32rem .75rem;font-family:var(--sans);font-size:.74rem;font-weight:600;cursor:pointer;}
+.offline-strook .ws-knop{flex:none;background:var(--accent);color:#fff;border:none;border-radius:100px;
+  padding:.32rem .75rem;font-family:var(--sans);font-size:.74rem;font-weight:600;cursor:pointer;line-height:1.2;vertical-align:middle;}
+#offlineTekst .ws-knop{margin-left:.35rem;}
+.offline-strook .ws-knop[disabled]{opacity:.6;}
 .up-zweef .up-bar{display:block;margin-top:.5rem;max-width:none;background:rgba(255,255,255,.18);}
 .up-zweef .up-bar i{background:#E8B460;}
 @media(max-width:720px){.up-zweef{bottom:calc(84px + env(safe-area-inset-bottom));}}
@@ -7973,6 +7975,36 @@ function offlineStand(tekst) {
   if (el) el.innerHTML = tekst;
 }
 
+// "Nu vernieuwen": de nieuwe versie staat al op het apparaat (sw.js heeft hem
+// bewaard), dus de pagina hoeft alleen opnieuw te laden. Op de iPhone als
+// thuisscherm-app doet location.reload() soms niets; dan na 1,5 s alsnog via
+// een nieuwe adres (met ?r=…), zodat hij hoe dan ook opnieuw laadt.
+function vernieuwSite(knop) {
+  if (knop) { knop.disabled = true; knop.textContent = 'Bezig…'; }
+  try { sessionStorage.setItem('tz_vernieuwd', '1'); } catch (e) {}
+  const zoek = (location.search ? location.search.replace(/[?&]r=\d+/, '') : '');
+  const nieuw = location.pathname + (zoek && zoek !== '?' ? zoek + '&' : '?') + 'r=' + Date.now() + location.hash;
+  setTimeout(() => { try { location.replace(nieuw); } catch (e) { location.href = nieuw; } }, 1500);
+  try { location.reload(); } catch (e) {}
+}
+
+// Na het vernieuwen: ?r=… weer uit het adres halen en even bevestigen.
+(function () {
+  let vernieuwd = false;
+  try { vernieuwd = sessionStorage.getItem('tz_vernieuwd') === '1'; sessionStorage.removeItem('tz_vernieuwd'); } catch (e) {}
+  if (/[?&]r=\d+/.test(location.search)) {
+    const zoek = location.search.replace(/[?&]r=\d+/, '').replace(/^&/, '?');
+    try { history.replaceState(history.state, '', location.pathname + (zoek === '?' ? '' : zoek) + location.hash); } catch (e) {}
+  }
+  if (vernieuwd) {
+    window.addEventListener('load', () => {
+      const el = document.getElementById('offlineStrook');
+      if (el) el.hidden = true;
+      if (typeof toonVolgordeMelding === 'function') toonVolgordeMelding('Nieuwste versie geladen');
+    });
+  }
+})();
+
 function alleReisFotos() {
   const uit = [];
   DAYS.forEach(d => (photos[d.id] || []).forEach(p => { if (p.src) uit.push(p.src); }));
@@ -8026,8 +8058,7 @@ if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
     if (d.type === 'nieuweVersie') {
       const el = document.getElementById('offlineStrook');
       if (el) {
-        document.getElementById('offlineTekst').innerHTML = 'Er is een nieuwe versie van de site. <u style="cursor:pointer">Nu vernieuwen</u>';
-        el.querySelector('#offlineTekst').onclick = () => location.reload();
+        document.getElementById('offlineTekst').innerHTML = 'Er is een nieuwe versie van de site. <button type="button" class="ws-knop" onclick="vernieuwSite(this)">Nu vernieuwen</button>';
         el.hidden = false;
       }
       return;

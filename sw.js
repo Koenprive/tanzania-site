@@ -3,7 +3,7 @@
    internet opent. Foto's en lodgefoto's die je één keer hebt gezien, blijven
    ook bewaard. Gegevens (jsonbin), uploaden (imgbb) en het weer gaan altijd
    rechtstreeks naar internet; de pagina valt zelf terug op haar laatste kopie. */
-const VERSIE = 'tz-v4';
+const VERSIE = 'tz-v5';
 const SCHIL = 'tz-schil-' + VERSIE;
 const BEELD = 'tz-beeld';
 const FONT = 'tz-font';
@@ -32,21 +32,39 @@ function metTijdslimiet(belofte, ms) {
 
 // De pagina: eerst internet. Duurt dat langer dan 6 seconden (traag netwerk
 // in Tanzania), dan meteen de bewaarde versie tonen — maar de download loopt
-// door. Is die klaar en anders dan wat er stond, dan krijgt de pagina een
-// seintje zodat ze 'Nieuwe versie — vernieuwen' kan laten zien.
+// door. Is die klaar en écht anders dan wat er stond, dan krijgt de pagina een
+// seintje zodat ze 'Nieuwe versie — vernieuwen' kan laten zien. Is de inhoud
+// gelijk, dan komt er geen seintje (anders stond die melding er op een traag
+// netwerk élke keer, en leek vernieuwen niets te doen).
+function isDePagina(req) {
+  const p = new URL(req.url).pathname;
+  return p === '/' || p === '/index.html';
+}
+
 async function pagina(req) {
   const cache = await caches.open(SCHIL);
-  const vers = fetch(req, {cache: 'no-store'}).then(async res => {
-    if (res && res.ok) await cache.put('index.html', res.clone());
-    return res;
-  });
+  const vers = (async () => {
+    const res = await fetch(req, {cache: 'no-store'});
+    if (!res || !res.ok || !isDePagina(req)) return {res: res, nieuw: false};
+    const kopie = res.clone();
+    let nieuw = true;
+    try {
+      const oud = await cache.match('index.html');
+      if (oud) {
+        const [a, b] = await Promise.all([oud.clone().text(), res.clone().text()]);
+        nieuw = a !== b;
+      }
+    } catch (e) {}
+    if (nieuw) await cache.put('index.html', kopie);
+    return {res: res, nieuw: nieuw};
+  })();
   try {
-    return await metTijdslimiet(vers, 6000);
+    return (await metTijdslimiet(vers, 6000)).res;
   } catch (e) {
     const oud = (await cache.match('index.html')) || (await cache.match('./'));
-    if (!oud) { try { return await vers; } catch (e2) { return Response.error(); } }
-    vers.then(async res => {
-      if (!res || !res.ok) return;
+    if (!oud) { try { return (await vers).res; } catch (e2) { return Response.error(); } }
+    vers.then(async r => {
+      if (!r || !r.res || !r.res.ok || !r.nieuw) return;
       const lijst = await self.clients.matchAll({type: 'window'});
       lijst.forEach(c => c.postMessage({type: 'nieuweVersie'}));
     }).catch(() => {});
