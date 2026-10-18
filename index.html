@@ -384,6 +384,15 @@ section.band{padding:clamp(4rem,9vw,7rem) 0;scroll-margin-top:calc(var(--nav-h) 
 }
 .weg-knop:hover{background:#9C2F24;}
 .weg-knop:active{transform:scale(.985);}
+.dagkies-lijst{display:flex;flex-direction:column;gap:.4rem;max-height:46vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:2px;}
+.dagkies-lijst button{display:flex;align-items:center;gap:.7rem;width:100%;text-align:left;padding:.6rem .8rem;
+  border:1px solid var(--line-soft);border-radius:var(--r-sm);background:var(--surface);cursor:pointer;font-family:var(--sans);color:var(--ink);}
+.dagkies-lijst button:hover{border-color:var(--muted);}
+.dagkies-lijst button.nu{opacity:.45;cursor:default;}
+.dagkies-lijst button.tip{border-color:var(--accent);background:rgba(180,98,45,.07);}
+.dagkies-lijst .dk-badge{flex:0 0 auto;font-size:.72rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);min-width:3.6rem;}
+.dagkies-lijst .dk-titel{font-size:.9rem;}
+.dagkies-lijst .dk-sub{display:block;font-size:.76rem;color:var(--muted);}
 .weg-toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));transform:translate(-50%,20px);
   display:flex;align-items:center;gap:.9rem;max-width:calc(100vw - 32px);
   background:var(--ink);color:#fff;font-family:var(--sans);font-size:.84rem;padding:.55rem .6rem .55rem 1rem;border-radius:100px;
@@ -2637,6 +2646,7 @@ body.sleepbezig{-webkit-user-select:none;user-select:none;cursor:grabbing;}
   <div class="lb-bar">
     <button class="lb-btn" id="lbVervang" hidden onclick="vervangSpotFoto()" title="Andere foto kiezen"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L8 6H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-4l-1.5-2Z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
     <button class="lb-btn" id="lbFav" onclick="favFromLightbox()" title="Als hoogtepunt markeren"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.2l2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.7l6.1-.9Z"/></svg></button>
+    <button class="lb-btn" id="lbDag" onclick="dagKiezenUitLightbox()" title="Naar een andere dag zetten"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="m10 15 2 2 4-4"/></svg></button>
     <button class="lb-btn" id="lbDeel" onclick="deelFotoUitLightbox()" title="Deze foto delen via WhatsApp"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5.1-1.3A10 10 0 1 0 12 2Zm0 1.8a8.2 8.2 0 1 1-4.2 15.3l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 0 1 12 3.8Zm-3 4.4c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1 2.8 1.2 3c.1.2 2 3.1 4.9 4.3 2.4 1 2.9.8 3.4.7.5 0 1.7-.7 1.9-1.4.2-.7.2-1.2.2-1.3-.1-.1-.3-.2-.6-.4l-2-1c-.3-.1-.5-.1-.7.1l-.9 1.1c-.2.2-.3.2-.6.1-.3-.2-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.5-.5.3-.5c.1-.2 0-.4 0-.5l-.9-2.2c-.2-.5-.4-.5-.6-.5H9Z"/></svg></button>
     <button class="lb-btn" id="lbLink" onclick="copyPhotoLink()" title="Link naar deze foto kopiëren"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg></button>
     <button class="lb-btn" id="lbEdit" onclick="editFromLightbox()" title="Verhaal schrijven of aanpassen"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
@@ -2667,6 +2677,21 @@ body.sleepbezig{-webkit-user-select:none;user-select:none;cursor:grabbing;}
     <p class="weg-uitleg" id="wegUitleg">De foto en het verhaal erbij verdwijnen voor iedereen. Direct erna kun je het nog ongedaan maken.</p>
     <button class="weg-knop" id="wegJa" onclick="wegAntwoord(true)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/><path d="M10 11v6M14 11v6"/></svg>Verwijderen</button>
     <div class="deel-rij"><button class="vb-link2" onclick="wegAntwoord(false)">Annuleren</button></div>
+  </div>
+</div>
+<!-- ── FOTO NAAR EEN ANDERE DAG ── -->
+<div class="deel-backdrop weg-backdrop" id="dagKiesModal" hidden role="dialog" aria-modal="true" aria-labelledby="dagKiesTitel" onclick="if(event.target===this)sluitDagKies()">
+  <div class="deel-venster">
+    <div class="deel-greep" aria-hidden="true"></div>
+    <button class="vb-sluit" onclick="sluitDagKies()" aria-label="Sluiten"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    <h3 class="deel-kop" id="dagKiesTitel">Naar een andere dag</h3>
+    <div class="weg-kaart">
+      <img id="dagKiesFoto" src="" alt="">
+      <div><p class="weg-dag" id="dagKiesNu"></p><p class="weg-cap" id="dagKiesCap"></p></div>
+    </div>
+    <p class="weg-uitleg" id="dagKiesUitleg">Kies de dag waar deze foto bij hoort.</p>
+    <div class="dagkies-lijst" id="dagKiesLijst"></div>
+    <div class="deel-rij"><button class="vb-link2" onclick="sluitDagKies()">Annuleren</button></div>
   </div>
 </div>
 <!-- ── EIGEN DIER TOEVOEGEN / AANPASSEN ── -->
@@ -3230,6 +3255,7 @@ function applyRecord(record) {
   renderCijfers();
   renderPhotoDots();
   if (typeof wachtrijHerstel === 'function') wachtrijHerstel();
+  if (typeof verplaatsOpDatum === 'function') verplaatsOpDatum();
   openFromHash();
 }
 
@@ -3588,17 +3614,49 @@ function buildHeroButtons() {
   }).join("");
 }
 
-function addPhotosToGroup(idsStr, event) {
-  // For hero upload, add to first id in group (lead day)
-  const id = idsStr.split(",")[0];
-  addPhotos(id, event);
+// Groepsknop (Arusha, Serengeti, …): elke foto gaat op opnamedatum naar de
+// juiste dag binnen die groep. Geen datum, of een datum buiten de groep →
+// de eerste dag van de groep (zoals vroeger altijd gebeurde).
+async function addPhotosToGroup(idsStr, event) {
+  const ids = idsStr.split(",");
+  await addPhotosAuto(event, ids);
   // Update group count
-  const groupCount = UPLOAD_GROUPS.find(g => g.ids[0] === id);
+  const groupCount = UPLOAD_GROUPS.find(g => g.ids[0] === ids[0]);
   if (groupCount) {
     const total = groupCount.ids.reduce((acc, gid) => acc + (photos[gid]||[]).length, 0);
-    const cnt = document.getElementById("ucount-group-" + id);
+    const cnt = document.getElementById("ucount-group-" + ids[0]);
     if (cnt) { cnt.textContent = total; cnt.style.display = total > 0 ? "inline" : "none"; }
   }
+}
+
+// Foto's met een opnamedatum die bij een andere reisdag hoort (bv. via de
+// Arusha-knop op dag 1 gezet, maar gemaakt op 18 okt = dag 3) naar die dag
+// verhuizen. Loopt na elke keer laden; wordt vastgelegd bij de eerstvolgende
+// keer bewaren (het samenvoegen ziet het als: hier weg, daar nieuw).
+function verplaatsOpDatum() {
+  let n = 0;
+  const geraakt = new Set();
+  const verhuisd = [];
+  DAY_ORDER.forEach(id => {
+    const lijst = photos[id];
+    if (!Array.isArray(lijst) || !lijst.length) return;
+    for (let i = lijst.length - 1; i >= 0; i--) {
+      const p = lijst[i];
+      if (!p || p.vast) continue;                       // met de hand op deze dag gezet
+      const doel = p.taken ? dayForDate(p.taken) : null;
+      if (!doel || doel === id || !DAYS.some(d => d.id === doel)) continue;
+      lijst.splice(i, 1);
+      verhuisd.push([doel, p]);
+      geraakt.add(id); geraakt.add(doel);
+      n++;
+    }
+  });
+  verhuisd.reverse().forEach(([doel, p]) => voegOpTijdIn(doel, p));
+  geraakt.forEach(id => { sortByTaken(id); updateCount(id); renderCarousel(id); });
+  if (n && typeof toonVolgordeMelding === 'function') {
+    toonVolgordeMelding(n + (n === 1 ? ' foto' : ' foto’s') + ' naar de juiste dag gezet');
+  }
+  return n;
 }
 
 // ── EXIF: locatie en tijdstip uit de foto lezen ──
@@ -4000,78 +4058,19 @@ async function tussenBewaren(klaar, totaal) {
   catch (e) { return (e && e.message === 'opslag-vol') ? 'vol' : 'mislukt'; }
 }
 
-async function addPhotos(id, event) {
-  const files = Array.from(event.target.files);
-  event.target.value = "";
-  if (!files.length) return;
-  if (!await ensureUnlocked('Wachtwoord om foto’s toe te voegen:')) return;
-
-  toonVoortgang('Datums uitlezen…', 0, files.length);
-  let items = await leesEnSorteer(files);
-
-  // al eens geüpload? (zelfde opnametijd als een foto die er al staat)
-  const dubbel = dubbeleItems(id, items);
-  if (dubbel.length) {
-    const alles = dubbel.length === items.length;
-    const vraag = alles
-      ? (dubbel.length === 1 ? 'Deze foto staat er al bij (zelfde opnametijd).' : 'Deze ' + dubbel.length + ' foto\u2019s staan er al bij (zelfde opnametijd).') + '\n\nToch nog een keer toevoegen?'
-      : dubbel.length + ' van de ' + items.length + ' foto\u2019s ' + (dubbel.length === 1 ? 'staat' : 'staan') + ' er al bij (zelfde opnametijd).\n\nOK = alleen de nieuwe toevoegen\nAnnuleren = alles toevoegen, ook de dubbele';
-    const ok = confirm(vraag);
-    if (alles && !ok) { verbergVoortgang(''); return; }
-    if (!alles && ok) items = items.filter(it => dubbel.indexOf(it) < 0);
-  }
-
-  const added = [], origLijst = [];
-  const metOrig = origWil();
-  let klaar = 0, mislukt = 0, vol = false, gestopt = 0;
-  uploadBegin();
-  for (const it of items) {
-    if (_upStop) { gestopt = items.length - klaar; break; }
-    toonVoortgang('Uploaden… foto ' + (klaar + 1) + ' van ' + items.length, klaar, items.length);
-    try {
-      const rec = await uploadNaarImgbb(it.file, it.meta);
-      if (rec) {
-        voegOpTijdIn(id, rec);
-        added.push(rec);
-        if (metOrig) origLijst.push({src: rec.src, file: it.file});
-        wachtrijZet(id, rec);
-        updateCount(id);
-        renderCarousel(id);
-      } else mislukt++;
-    } catch(e) { console.error('Upload mislukt', e); mislukt++; }
-    klaar++;
-    if (added.length && added.length % TUSSEN_BEWAREN === 0 && klaar < items.length) {
-      if (await tussenBewaren(klaar, items.length) === 'vol') { vol = true; gestopt = items.length - klaar; break; }
-    }
-  }
-  uploadEinde();
-  sortByTaken(id);
-  carouselState[id] = 0;
-  updateCount(id);
-  renderCarousel(id);
-  let melding = added.length + ' foto' + (added.length === 1 ? '' : "'s") + ' toegevoegd';
-  if (mislukt) melding += ' · ' + mislukt + ' mislukt (probeer die zo nog eens)';
-  if (gestopt) melding += ' · ' + gestopt + ' niet geüpload (' + (vol ? 'opslag vol' : 'gestopt') + ')';
-  let bewaard = false;
-  if (added.length && !vol) {
-    toonVoortgang('Bewaren…', items.length, items.length);
-    bewaard = await bewaarNaUpload(added.map(rec => ({id: id, rec: rec})));
-    if (!bewaard) melding = added.length + ' foto' + (added.length === 1 ? '' : "'s") + ' geüpload, maar NIET bewaard';
-  } else if (vol) melding = added.length + ' foto' + (added.length === 1 ? '' : "'s") + ' geüpload, maar de opslag is vol';
-  verbergVoortgang(melding);
-  renderFavs(); renderCollages(); renderCijfers();
-  if (added.length && added.length <= 8) {
-    _storyQueue = added
-      .map(rec => ({id: id, idx: photos[id].indexOf(rec)}))
-      .filter(q => q.idx >= 0)
-      .sort((a, b) => a.idx - b.idx);
-    nextStory();
-  }
-  if (bewaard && origLijst.length) origineelNaUpload(origLijst);
+// Knop op een dagpagina: alle foto's bij die dag, maar foto's waarvan de
+// opnamedatum bij een andere reisdag hoort worden eerst gemeld (zie addPhotosAuto).
+function addPhotos(id, event) {
+  return addPhotosAuto(event, null, id);
 }
 
 // ── ALLES IN EEN KEER: dag bepalen uit de opnamedatum ──
-async function addPhotosAuto(event) {
+// Drie manieren van aanroepen:
+//   addPhotosAuto(event)            "Alles in één keer": dag per foto uit de opnamedatum
+//   addPhotosAuto(event, ids)       groepsknop: op datum binnen de groep, anders ids[0]
+//   addPhotosAuto(event, null, id)  knop op een dagpagina: alles bij die dag; staan er
+//                                   foto's van een andere reisdag bij, dan eerst vragen
+async function addPhotosAuto(event, groep, vast) {
   const files = Array.from(event.target.files);
   event.target.value = '';
   if (!files.length) return;
@@ -4082,7 +4081,12 @@ async function addPhotosAuto(event) {
   let items = await leesEnSorteer(files);
   items.forEach(it => { it.day = it.meta && it.meta.taken ? dayForDate(it.meta.taken) : null; });
 
-  if (!items.some(it => it.day)) {
+  if (vast) {
+    // foto met opnamedatum van een andere reisdag → daar; zonder datum → deze dag
+    items.forEach(it => { if (!it.day) it.day = vast; });
+  } else if (groep && groep.length) {
+    items.forEach(it => { if (it.day && groep.indexOf(it.day) < 0) it.day = null; });
+  } else if (!items.some(it => it.day)) {
     verbergVoortgang('');
     alert('Geen van deze foto’s heeft een opnamedatum uit de reisperiode.\n\nZet ze bij een bestemming met de knoppen hieronder.');
     return;
@@ -4095,6 +4099,7 @@ async function addPhotosAuto(event) {
   for (let i = items.length - 1; i >= 0; i--) {
     if (items[i].day) vorige = items[i].day; else items[i].day = vorige;
   }
+  if (groep && groep.length) items.forEach(it => { if (!it.day) it.day = groep[0]; });
 
   // al eens geüpload? (per dag kijken naar de opnametijd)
   const dubbel = items.filter(it => dubbeleItems(it.day, [it]).length);
@@ -4146,6 +4151,13 @@ async function addPhotosAuto(event) {
   if (mislukt) melding += ' · ' + mislukt + ' mislukt';
   if (!bewaard) melding = gelukt + ' foto\u2019s geüpload, maar NIET bewaard';
   verbergVoortgang(melding);
+  if (toegevoegd.length && toegevoegd.length <= 8 && typeof nextStory === 'function') {
+    _storyQueue = toegevoegd
+      .map(t => ({id: t.id, idx: (photos[t.id] || []).indexOf(t.rec)}))
+      .filter(q => q.idx >= 0)
+      .sort((a, b) => DAY_ORDER.indexOf(a.id) - DAY_ORDER.indexOf(b.id) || a.idx - b.idx);
+    nextStory();
+  }
   if (bewaard && toegevoegd.length && origLijst.length) origineelNaUpload(origLijst);
 }
 
@@ -4748,6 +4760,8 @@ function refreshLightbox() {
   if (linkKnop) linkKnop.hidden = !!img.isPdf || isSpot;
   const deelKnop = document.getElementById('lbDeel');
   if (deelKnop) deelKnop.hidden = !!img.isPdf || isSpot;
+  const dagKnop = document.getElementById('lbDag');
+  if (dagKnop) dagKnop.hidden = !!img.isPdf || isSpot;
   const vervKnop = document.getElementById('lbVervang');
   if (vervKnop) vervKnop.hidden = !isSpot;
   if (!isSpot) zetHash('f=' + _lb.id + '-' + _lb.i);
@@ -7030,6 +7044,81 @@ function toonDeelReis() {
   deelTel();
   deelFotoStrip(favs.length ? favs : alle.slice(0, 12), null);
 }
+
+// ── Foto naar een andere dag ──
+var _dagKies = null;
+function dagKiezenUitLightbox() {
+  if (!_lb) return;
+  const slide = (_slides[_lb.id] || [])[_lb.i];
+  if (!slide || slide.isPdf || slide.spot) return;
+  toonDagKies(_lb.id, slide.idx);
+}
+function toonDagKies(id, idx) {
+  const p = (photos[id] || [])[idx];
+  const m = document.getElementById('dagKiesModal');
+  if (!p || !m) return;
+  _dagKies = {id: id, idx: idx, p: p};
+  const day = DAYS.find(d => d.id === id);
+  const opDatum = p.taken ? dayForDate(p.taken) : null;
+  document.getElementById('dagKiesFoto').src = kleinUrl(p, 200) || p.src || '';
+  document.getElementById('dagKiesNu').textContent =
+    ['Nu bij ' + (day ? day.days + ' · ' + day.title : id), p.place, fmtTaken(p.taken)].filter(Boolean).join(' · ');
+  const cap = document.getElementById('dagKiesCap');
+  cap.textContent = p.caption ? '\u201c' + p.caption + '\u201d' : (p.taken ? '' : 'Geen opnamedatum in de foto');
+  document.getElementById('dagKiesUitleg').textContent = opDatum && opDatum !== id
+    ? 'Volgens de opnamedatum hoort deze foto bij ' + ((DAYS.find(d => d.id === opDatum) || {}).days || opDatum) + '.'
+    : 'Kies de dag waar deze foto bij hoort.';
+  document.getElementById('dagKiesLijst').innerHTML = DAYS.map(d => {
+    const nu = d.id === id, tip = d.id === opDatum && !nu;
+    return '<button type="button" class="' + (nu ? 'nu' : '') + (tip ? ' tip' : '') + '"' +
+      (nu ? ' disabled' : ' onclick="verplaatsFoto(\'' + d.id + '\')"') + '>' +
+      '<span class="dk-badge">' + d.days + '</span><span><span class="dk-titel">' + d.title + '</span>' +
+      '<span class="dk-sub">' + d.date + (nu ? ' · staat hier nu' : tip ? ' · volgens de opnamedatum' : '') + '</span></span></button>';
+  }).join('');
+  m.hidden = false;
+}
+function sluitDagKies() {
+  const m = document.getElementById('dagKiesModal');
+  if (m) m.hidden = true;
+  _dagKies = null;
+}
+async function verplaatsFoto(naar) {
+  const k = _dagKies;
+  if (!k || !naar || naar === k.id) return;
+  if (!await ensureUnlocked('Wachtwoord om de foto te verplaatsen:')) return;
+  sluitDagKies();
+  const van = k.id, p = k.p;
+  const i = (photos[van] || []).indexOf(p);
+  if (i < 0) return;
+  photos[van].splice(i, 1);
+  p.vast = 1;                                   // met de hand gekozen dag: niet meer automatisch verplaatsen
+  voegOpTijdIn(naar, p);
+  sortByTaken(naar);
+  hertekenNaVerwijderen(van);
+  hertekenNaVerwijderen(naar);
+  if (typeof renderPhotoDots === 'function') renderPhotoDots();
+  const dagNaam = (DAYS.find(d => d.id === naar) || {}).days || naar;
+  if (_lb && _lb.id === van) {
+    const lijst = _slides[naar] || [];
+    const ni = lijst.findIndex(sl => sl.src === p.src);
+    if (ni >= 0) { _lb = {id: naar, i: ni}; refreshLightbox(); } else closeLightbox();
+  }
+  if (typeof toonVolgordeMelding === 'function') toonVolgordeMelding('Foto naar ' + dagNaam + ' gezet');
+  try { await savePhotosToCloud(); }
+  catch (e) {
+    const j = (photos[naar] || []).indexOf(p);
+    if (j >= 0) photos[naar].splice(j, 1);
+    delete p.vast;
+    if (!photos[van]) photos[van] = [];
+    photos[van].splice(Math.min(i, photos[van].length), 0, p);
+    hertekenNaVerwijderen(van); hertekenNaVerwijderen(naar);
+    alert('Verplaatsen is niet bewaard (geen verbinding?). De foto staat weer bij ' + ((DAYS.find(d => d.id === van) || {}).days || van) + '.');
+  }
+}
+document.addEventListener('keydown', e => {
+  const m = document.getElementById('dagKiesModal');
+  if (m && !m.hidden && e.key === 'Escape') { e.stopPropagation(); sluitDagKies(); }
+}, true);
 
 function deelFotoUitLightbox() {
   if (!_lb) return;
