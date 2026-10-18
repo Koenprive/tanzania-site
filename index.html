@@ -937,6 +937,28 @@ footer{background:var(--ink);color:rgba(255,255,255,.55);padding:3.5rem 0 calc(2
   border:2px solid #fff;box-shadow:0 0 0 1px rgba(40,28,14,.18);
 }
 .spot-chip:not(.done) .chip-thumb{border-color:var(--line);}
+/* eigen dieren: + Ander dier en het invoervenster */
+.spot-nieuw{border-style:dashed;color:var(--accent);font-weight:600;padding:.34rem .95rem .34rem .75rem;cursor:pointer;gap:.35rem;}
+.spot-nieuw:hover{background:var(--accent-weak);}
+.spot-nieuw svg{flex:none;}
+.spot-chip.eigen .chip-toggle{display:inline-flex;align-items:center;gap:.3rem;}
+.spot-chip.eigen .chip-toggle svg{opacity:.75;flex:none;}
+.dier-backdrop{z-index:470;}
+.dier-form{display:flex;flex-direction:column;gap:.55rem;}
+.dier-form input{width:100%;font:inherit;font-size:16px;font-weight:600;color:var(--ink);border:1.5px solid var(--line);border-radius:12px;
+  padding:.7rem .85rem;background:#fff;outline:none;}
+.dier-form input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-weak);}
+.dier-hint{font-family:var(--sans);font-size:.78rem;color:var(--muted);margin:0;}
+.dier-fout{font-family:var(--sans);font-size:.8rem;color:#B3261E;margin:0;min-height:1.1em;}
+.dier-fout[hidden]{display:none;}
+.dier-knop{display:flex;align-items:center;justify-content:center;gap:.5rem;width:100%;border:0;border-radius:100px;padding:.8rem 1rem;
+  font-family:var(--sans);font-size:.92rem;font-weight:600;background:var(--accent);color:#fff;cursor:pointer;margin-top:.3rem;}
+.dier-knop:active{transform:scale(.985);}
+.dier-knop:disabled{opacity:.55;cursor:default;}
+.dier-weg{border:0;background:none;color:#B3261E;font-family:var(--sans);font-size:.82rem;font-weight:600;cursor:pointer;padding:.5rem;}
+.dier-weg[hidden]{display:none;}
+.dier-meta{font-family:var(--sans);font-size:.78rem;color:var(--muted);margin:0;}
+.dier-meta[hidden]{display:none;}
 
 /* ─────────── HET HELE ALBUM (boek) ─────────── */
 .boek-balk{display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;margin-bottom:1rem;}
@@ -2418,7 +2440,7 @@ body.sleepbezig{-webkit-user-select:none;user-select:none;cursor:grabbing;}
       <div class="sec-head" style="margin-bottom:0">
         <p class="sec-label">Wie hebben we gezien?</p>
         <h2 class="sec-title">De spotlijst</h2>
-        <p class="sec-sub">Vink af zodra je er een ziet &mdash; datum en plek komen er vanzelf bij. Tik op het rondje links om er je eigen foto in te zetten &mdash; en daarna om hem groot te bekijken.</p>
+        <p class="sec-sub">Vink af zodra je er een ziet &mdash; datum en plek komen er vanzelf bij. Tik op het rondje links om er je eigen foto in te zetten &mdash; en daarna om hem groot te bekijken. Iets gezien dat er niet tussen staat? Zet het erbij met <strong>+ Ander dier</strong>.</p>
       </div>
       <div class="spot-score">
         <svg class="spot-ring" viewBox="0 0 40 40">
@@ -2645,6 +2667,25 @@ body.sleepbezig{-webkit-user-select:none;user-select:none;cursor:grabbing;}
     <p class="weg-uitleg" id="wegUitleg">De foto en het verhaal erbij verdwijnen voor iedereen. Direct erna kun je het nog ongedaan maken.</p>
     <button class="weg-knop" id="wegJa" onclick="wegAntwoord(true)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/><path d="M10 11v6M14 11v6"/></svg>Verwijderen</button>
     <div class="deel-rij"><button class="vb-link2" onclick="wegAntwoord(false)">Annuleren</button></div>
+  </div>
+</div>
+<!-- ── EIGEN DIER TOEVOEGEN / AANPASSEN ── -->
+<div class="deel-backdrop dier-backdrop" id="dierModal" hidden role="dialog" aria-modal="true" aria-labelledby="dierTitel" onclick="if(event.target===this)sluitDier()">
+  <div class="deel-venster">
+    <div class="deel-greep" aria-hidden="true"></div>
+    <button class="vb-sluit" onclick="sluitDier()" aria-label="Sluiten"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    <h3 class="deel-kop" id="dierTitel">Ander dier gezien</h3>
+    <form class="dier-form" id="dierForm" onsubmit="event.preventDefault();dierOpslaan()" autocomplete="off">
+      <input type="text" id="dierNaam" maxlength="40" placeholder="Naam van het dier" autocapitalize="sentences" autocorrect="off" spellcheck="false" enterkeyhint="done">
+      <p class="dier-hint" id="dierHint">Bijvoorbeeld serval, dikdik of secretarisvogel. Datum en plek komen er vanzelf bij; een foto kun je daarna via het rondje toevoegen.</p>
+      <p class="dier-meta" id="dierMeta" hidden></p>
+      <p class="dier-fout" id="dierFout" hidden></p>
+      <button type="submit" class="dier-knop" id="dierKnop">Toevoegen aan de spotlijst</button>
+      <div class="deel-rij">
+        <button type="button" class="vb-link2" onclick="sluitDier()">Annuleren</button>
+        <button type="button" class="dier-weg" id="dierWeg" hidden onclick="dierWeghalen()">Van de lijst halen</button>
+      </div>
+    </form>
   </div>
 </div>
 <!-- ── DAG DELEN ── -->
@@ -6185,6 +6226,18 @@ const DIEREN = [
   {id:'gekko', naam:'Gekko'}
 ];
 
+// Eigen dieren staan in `spots` zelf, met een `naam` en een id dat met 'eigen-' begint.
+// Zo gaan ze vanzelf mee in jsonbin, het samenvoegen, de reservekopie en de offline kopie.
+function isEigenDier(id) { return typeof id === 'string' && id.indexOf('eigen-') === 0; }
+function eigenDieren() {
+  return Object.keys(spots)
+    .filter(k => isEigenDier(k) && spots[k] && typeof spots[k].naam === 'string' && spots[k].naam.trim())
+    .map(k => ({id: k, naam: spots[k].naam.trim(), eigen: true, date: spots[k].date || ''}))
+    .sort((a, b) => (a.date > b.date ? 1 : a.date < b.date ? -1 : a.naam.localeCompare(b.naam, 'nl')));
+}
+function alleDieren() { return DIEREN.concat(eigenDieren()); }
+function dierNaam(id) { const d = alleDieren().find(x => x.id === id); return d ? d.naam : ''; }
+
 function spotDatumTekst(s) {
   if (!s || !s.date) return '';
   let d;
@@ -6221,7 +6274,7 @@ function renderSpots() {
     '</div>';
   }).join('');
 
-  rest.innerHTML = DIEREN.filter(d => !d.big5).map(d => {
+  rest.innerHTML = alleDieren().filter(d => !d.big5).map(d => {
     const s = spots[d.id];
     const media = (s && s.src)
       ? '<button class="chip-media" title="Foto bekijken" onclick="openSpotLightbox(&#39;' + d.id + '&#39;)">' +
@@ -6232,10 +6285,17 @@ function renderSpots() {
       ? '<button class="chip-weg" title="' + esc(d.naam) + ' van de lijst halen" aria-label="' + esc(d.naam) +
         ' van de lijst halen" onclick="toggleSpot(&#39;' + d.id + '&#39;)"><svg width=\'12\' height=\'12\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2.4\' stroke-linecap=\'round\' aria-hidden=\'true\'><path d=\'M18 6 6 18M6 6l12 12\'/></svg></button>'
       : '';
-    return '<span class="spot-chip' + (s ? ' done' : '') + '" title="' + esc(spotDatumTekst(s)) + '">' + media +
-      '<button class="chip-toggle" onclick="toggleSpot(&#39;' + d.id + '&#39;)">' + d.naam + '</button>' + weg +
+    // Eigen dier: tik op de naam opent het venster (naam aanpassen / weghalen) i.p.v. meteen afvinken.
+    const toggle = d.eigen
+      ? '<button class="chip-toggle" title="Naam aanpassen" onclick="bewerkDier(&#39;' + d.id + '&#39;)">' + esc(d.naam) +
+        '<svg width=\'11\' height=\'11\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2.2\' stroke-linecap=\'round\' stroke-linejoin=\'round\' aria-hidden=\'true\'><path d=\'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z\'/></svg></button>'
+      : '<button class="chip-toggle" onclick="toggleSpot(&#39;' + d.id + '&#39;)">' + d.naam + '</button>';
+    return '<span class="spot-chip' + (s ? ' done' : '') + (d.eigen ? ' eigen' : '') + '" title="' + esc(spotDatumTekst(s)) + '">' + media +
+      toggle + weg +
     '</span>';
-  }).join('');
+  }).join('') +
+  '<button type="button" class="spot-chip spot-nieuw" onclick="nieuwDier()" title="Een dier toevoegen dat niet op de lijst staat">' +
+    '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Ander dier</button>';
 
   const n = DIEREN.filter(d => d.big5 && spots[d.id]).length;
   const score = document.getElementById('spotScore');
@@ -6252,7 +6312,7 @@ async function spotFoto(id, event) {
   event.target.value = '';
   if (!file) return;
   if (!await ensureUnlocked('Wachtwoord om een foto bij de spotlijst te zetten:')) return;
-  const dier = DIEREN.find(d => d.id === id);
+  const dier = alleDieren().find(d => d.id === id);
   toonVoortgang('Foto van de ' + (dier ? dier.naam.toLowerCase() : 'spot') + ' uploaden…', 0, 1);
   try {
     const klein = await shrink(file, 1400, 0.82);
@@ -6280,7 +6340,7 @@ async function spotFoto(id, event) {
 
 async function toggleSpot(id) {
   if (!await ensureUnlocked('Wachtwoord om de spotlijst bij te werken:')) return;
-  const dier = DIEREN.find(d => d.id === id);
+  const dier = alleDieren().find(d => d.id === id);
   if (spots[id]) {
     const heeftFoto = !!spots[id].src;
     if (!confirm((dier ? dier.naam : 'Dit dier') + ' weer van de lijst halen?' +
@@ -6298,7 +6358,7 @@ async function toggleSpot(id) {
 
 // ══════════ SPOTFOTO GROOT BEKIJKEN ══════════
 function bouwSpotSlides() {
-  const lijst = DIEREN.filter(d => spots[d.id] && spots[d.id].src).map(d => {
+  const lijst = alleDieren().filter(d => spots[d.id] && spots[d.id].src).map(d => {
     const s = spots[d.id];
     return {
       src: s.src, caption: d.naam, isPdf: false, spot: d.id,
@@ -6339,6 +6399,191 @@ async function spotVervangen(event) {
   if (!id) { inv.value = ''; return; }
   await spotFoto(id, event);
   if (_lb && _lb.id === '__spots') { bouwSpotSlides(); refreshLightbox(); }
+}
+
+// ══════════ EIGEN DIER TOEVOEGEN / AANPASSEN ══════════
+// Venster #dierModal. Nieuw dier: naam invullen → wachtwoord → komt afgevinkt op de lijst
+// (datum vandaag, plek van de reisdag). Bestaand eigen dier: naam aanpassen of weghalen.
+var _dierBewerk = null;   // id van het eigen dier dat open staat, of null bij 'nieuw'
+var _dierWegStap = 0;     // 0 = nog niet gevraagd, 1 = 'Echt weghalen?' staat op de knop
+var _dierBezig = false;
+
+function normNaam(t) {
+  return String(t || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+}
+function dierFout(tekst) {
+  const f = document.getElementById('dierFout');
+  if (!f) return;
+  f.textContent = tekst || '';
+  f.hidden = !tekst;
+}
+function openDierVenster(id) {
+  const m = document.getElementById('dierModal');
+  if (!m) return false;
+  _dierBewerk = id || null;
+  _dierWegStap = 0;
+  const inv = document.getElementById('dierNaam');
+  const knop = document.getElementById('dierKnop');
+  const weg = document.getElementById('dierWeg');
+  const meta = document.getElementById('dierMeta');
+  const hint = document.getElementById('dierHint');
+  dierFout('');
+  if (id) {
+    const s = spots[id] || {};
+    document.getElementById('dierTitel').textContent = 'Dier aanpassen';
+    inv.value = s.naam || '';
+    knop.textContent = 'Naam bewaren';
+    weg.hidden = false; weg.textContent = 'Van de lijst halen';
+    hint.hidden = true;
+    meta.hidden = false;
+    meta.textContent = 'Gespot ' + (spotDatumTekst(s) || 'zonder datum') + (s.src ? ' · met foto' : ' · nog zonder foto');
+  } else {
+    document.getElementById('dierTitel').textContent = 'Ander dier gezien';
+    inv.value = '';
+    knop.textContent = 'Toevoegen aan de spotlijst';
+    weg.hidden = true;
+    hint.hidden = false;
+    meta.hidden = true;
+  }
+  knop.disabled = false;
+  m.hidden = false;
+  // Direct focussen, binnen de tik: dan komt op de iPhone het toetsenbord meteen omhoog.
+  try { inv.focus({preventScroll: true}); if (id) inv.select(); } catch (e) {}
+  return true;
+}
+function nieuwDier() {
+  if (!openDierVenster(null)) {
+    const n = prompt('Naam van het dier:');
+    if (n) dierToevoegen(n);
+  }
+}
+function bewerkDier(id) {
+  if (!spots[id]) return;
+  if (!openDierVenster(id)) toggleSpot(id);
+}
+function sluitDier() {
+  const m = document.getElementById('dierModal');
+  if (m) m.hidden = true;
+  _dierBewerk = null; _dierWegStap = 0; _dierBezig = false;
+}
+document.addEventListener('keydown', e => {
+  const m = document.getElementById('dierModal');
+  if (m && !m.hidden && e.key === 'Escape') { e.stopPropagation(); sluitDier(); }
+}, true);
+
+function controleerDierNaam(naam, eigenId) {
+  const n = normNaam(naam);
+  if (!n) return {fout: 'Vul een naam in.'};
+  if (n.length < 2) return {fout: 'De naam is wel erg kort.'};
+  const zelfde = alleDieren().find(d => d.id !== eigenId && normNaam(d.naam) === n);
+  return {naam: naam.trim().replace(/\s+/g, ' '), zelfde: zelfde || null};
+}
+
+async function dierOpslaan() {
+  if (_dierBezig) return;
+  const inv = document.getElementById('dierNaam');
+  const naam = inv ? inv.value : '';
+  if (_dierBewerk) return dierHernoemen(_dierBewerk, naam);
+  return dierToevoegen(naam);
+}
+
+async function dierToevoegen(naam) {
+  const c = controleerDierNaam(naam, null);
+  if (c.fout) { dierFout(c.fout); return; }
+  if (c.zelfde) {
+    if (spots[c.zelfde.id]) { dierFout(c.zelfde.naam + ' staat al afgevinkt op de lijst.'); return; }
+    // Bestaat al als vast dier, maar nog niet gezien → gewoon afvinken.
+    sluitDier();
+    await toggleSpot(c.zelfde.id);
+    if (spots[c.zelfde.id]) toonVolgordeMelding(c.zelfde.naam + ' stond al op de lijst — afgevinkt');
+    return;
+  }
+  const knop = document.getElementById('dierKnop');
+  _dierBezig = true; if (knop) knop.disabled = true;
+  try {
+    if (!await ensureUnlocked('Wachtwoord om een dier toe te voegen:')) return;
+    const slug = normNaam(c.naam).replace(/ /g, '-').slice(0, 24) || 'dier';
+    let id;
+    do { id = 'eigen-' + slug + '-' + Math.random().toString(36).slice(2, 6); } while (spots[id]);
+    const dag = DAYS.find(d => d.id === currentDayId());
+    spots[id] = {naam: c.naam, date: todayIso(), place: dag ? dag.loc : ''};
+    renderSpots();
+    renderCijfers();
+    try {
+      await savePhotosToCloud();
+    } catch (e) {
+      delete spots[id];
+      renderSpots(); renderCijfers();
+      dierFout('Opslaan mislukt — probeer het nog eens.');
+      return;
+    }
+    sluitDier();
+    toonVolgordeMelding(c.naam + ' staat op de spotlijst');
+    const chip = document.querySelector('.spot-chip.eigen .chip-toggle[onclick*="' + id + '"]');
+    if (chip && chip.scrollIntoView) { try { chip.scrollIntoView({block: 'nearest', behavior: 'smooth'}); } catch (e) {} }
+  } finally {
+    _dierBezig = false; if (knop) knop.disabled = false;
+  }
+}
+
+async function dierHernoemen(id, naam) {
+  const s = spots[id];
+  if (!s) { sluitDier(); return; }
+  const c = controleerDierNaam(naam, id);
+  if (c.fout) { dierFout(c.fout); return; }
+  if (c.zelfde) { dierFout('Er staat al een ' + c.zelfde.naam.toLowerCase() + ' op de lijst.'); return; }
+  if (c.naam === s.naam) { sluitDier(); return; }
+  const knop = document.getElementById('dierKnop');
+  _dierBezig = true; if (knop) knop.disabled = true;
+  try {
+    if (!await ensureUnlocked('Wachtwoord om de naam aan te passen:')) return;
+    const oud = s.naam;
+    s.naam = c.naam;
+    renderSpots();
+    try {
+      await savePhotosToCloud();
+    } catch (e) {
+      s.naam = oud; renderSpots();
+      dierFout('Opslaan mislukt — probeer het nog eens.');
+      return;
+    }
+    if (_lb && _lb.id === '__spots') { bouwSpotSlides(); refreshLightbox(); }
+    sluitDier();
+    toonVolgordeMelding('Naam aangepast');
+  } finally {
+    _dierBezig = false; if (knop) knop.disabled = false;
+  }
+}
+
+async function dierWeghalen() {
+  const id = _dierBewerk;
+  const s = id && spots[id];
+  const weg = document.getElementById('dierWeg');
+  if (!s || _dierBezig) return;
+  if (_dierWegStap === 0) {
+    _dierWegStap = 1;
+    if (weg) weg.textContent = s.src ? 'Echt weghalen? Ook de foto gaat weg' : 'Echt weghalen?';
+    return;
+  }
+  _dierBezig = true;
+  try {
+    if (!await ensureUnlocked('Wachtwoord om de spotlijst bij te werken:')) { _dierWegStap = 0; if (weg) weg.textContent = 'Van de lijst halen'; return; }
+    const kopie = s;
+    delete spots[id];
+    renderSpots(); renderCijfers();
+    try {
+      await savePhotosToCloud();
+    } catch (e) {
+      spots[id] = kopie; renderSpots(); renderCijfers();
+      dierFout('Opslaan mislukt — probeer het nog eens.');
+      _dierWegStap = 0; if (weg) weg.textContent = 'Van de lijst halen';
+      return;
+    }
+    sluitDier();
+    toonVolgordeMelding(kopie.naam + ' van de lijst gehaald');
+  } finally {
+    _dierBezig = false;
+  }
 }
 
 // ══════════ HOOGTEPUNTEN ══════════
@@ -6644,7 +6889,7 @@ function deelVerhalen(id) {
   return (photos[id] || []).map(f => (f.caption || '').trim()).filter(Boolean);
 }
 function deelDieren(id) {
-  return DIEREN.filter(x => spots[x.id] && typeof dayForDate === 'function' && dayForDate(spots[x.id].date) === id)
+  return alleDieren().filter(x => spots[x.id] && typeof dayForDate === 'function' && dayForDate(spots[x.id].date) === id)
                .map(x => x.naam);
 }
 function kortAf(t, max) {
