@@ -3297,25 +3297,29 @@ function savePhotosToCloud() {
 }
 async function bewaarKern() {
   if (!_keys) throw new Error('vergrendeld');
+  let netGelezen = null;
 
   // Nooit schrijven als er nog nooit met succes gelezen is: anders zou een
   // mislukte leespoging de bestaande foto's met een lege lijst overschrijven.
   if (!_geladen) {
-    const bestaand = await haalBin();
-    if (bestaand) {
-      _geladen = true;
-      applyRecord(bestaand);
-      bewaarLokaleKopie(bestaand);
-      toonLeesfout(false);
-      alert('De foto\u2019s waren nog niet geladen. Ze staan er nu weer \u2014 probeer je wijziging opnieuw.');
-      throw new Error('opnieuw-geladen');
-    }
-    throw new Error('niet-geladen');
+    // Lukt het lezen nu w\u00e9l, dan voegen we onze wijziging samen met wat er online
+    // staat (basis = de kopie op dit apparaat, want d\u00e1t is wat we tot nu toe zagen)
+    // en gaan we gewoon door \u2014 geen melding, geen "probeer opnieuw".
+    const vers0 = await haalBinRuw();
+    if (!vers0) throw new Error('niet-geladen');
+    const kopie = (typeof lokaleKopie === 'function') ? lokaleKopie() : null;
+    const basis0 = (kopie && kopie.record && typeof kopie.record === 'object') ? kopie.record : {};
+    pasSamengevoegdToe(samenvoegRecords(basis0, vers0.samen, buildRecord()));
+    _laatst = vers0.laatst;
+    _geladen = true;
+    toonLeesfout(false);
+    toonOffline(false);
+    netGelezen = vers0;
   }
 
   // Eerst vers lezen: heeft iemand anders (andere telefoon) intussen iets
   // bewaard, dan voegen we dat samen in plaats van het te overschrijven.
-  const vers = await haalBinRuw();
+  const vers = netGelezen || await haalBinRuw();
   if (!vers) throw new Error('opslaan mislukt');
   let samengevoegd = false;
   if (vers.laatst[1] !== _laatst[1] || vers.laatst[2] !== _laatst[2]) {
@@ -3539,7 +3543,8 @@ async function bewaarNaUpload(toegevoegd) {
         ? 'De foto’s zijn geüpload, maar de lijst kon niet bewaard worden omdat de bestaande foto’s niet geladen konden worden.'
         : 'De foto’s zijn geüpload, maar het bewaren van de lijst is mislukt (geen verbinding?).';
       if (poging < 4 && confirm(tekst + '\n\nNog een keer proberen?')) continue;
-      alert('Niet bewaard. Herlaad de pagina straks en zet de foto’s dan opnieuw erbij.');
+      alert('Nog niet bewaard. De foto’s staan veilig in de wachtrij op dit toestel: zodra er weer verbinding is, zie je bovenin "Nu bewaren". Niet opnieuw toevoegen.');
+      toonWachtrij(wachtrijLees().length);
       return false;
     }
   }
