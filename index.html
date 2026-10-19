@@ -751,6 +751,25 @@ footer{background:var(--ink);color:rgba(255,255,255,.55);padding:3.5rem 0 calc(2
   color:rgba(255,255,255,.9);font-size:.86rem;line-height:1.7;white-space:pre-wrap;
 }
 .lb-figure figcaption:empty{display:none;}
+/* laadmelding + foutkaart: nooit zomaar een zwart vlak */
+.lb-laden{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:3;
+  display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:100px;
+  background:rgba(255,255,255,.12);color:#fff;font:500 .85rem/1 var(--sans);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;
+}
+.lb-laden[hidden]{display:none;}
+.lb-spin{width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;animation:lbSpin .8s linear infinite;}
+@keyframes lbSpin{to{transform:rotate(360deg)}}
+.lb-fout{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:5;
+  width:min(320px,86vw);padding:1.3rem 1.2rem;border-radius:16px;text-align:center;
+  background:rgba(255,255,255,.1);color:#fff;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+}
+.lb-fout[hidden]{display:none;}
+.lb-fout p{margin:0 0 .9rem;font-size:.95rem;line-height:1.5;}
+.lb-fout small{color:rgba(255,255,255,.65);font-size:.8rem;}
 
 /* liggend: foto boven, verhaal eronder */
 .lb-figure.landscape{flex-direction:column;align-items:center;}
@@ -2742,6 +2761,11 @@ body.sleepbezig{-webkit-user-select:none;user-select:none;cursor:grabbing;}
     <img id="lbImg" src="" alt="">
     <figcaption id="lbCap"></figcaption>
   </figure>
+  <div class="lb-laden" id="lbLaden" hidden><span class="lb-spin" aria-hidden="true"></span>Foto laden…</div>
+  <div class="lb-fout" id="lbFout" hidden>
+    <p>Deze foto wilde niet laden.<br><small>Traag of geen internet? Dan lukt het straks wel.</small></p>
+    <button class="btn" onclick="lbOpnieuw()">Opnieuw proberen</button>
+  </div>
   <div class="lb-meta" id="lbMeta"></div>
   <input type="file" id="spotVervang" accept="image/*" style="display:none" onchange="spotVervangen(event)">
 </div>
@@ -4692,10 +4716,17 @@ function imgAttr(p, w) {
 }
 document.addEventListener('error', function (e) {
   const im = e.target;
-  if (im && im.tagName === 'IMG' && im.dataset && im.dataset.orig) {
+  if (!im || im.tagName !== 'IMG') return;
+  // mislukt → uit de offline-voorraad halen, anders blijft een slecht bewaard antwoord hangen
+  swVergeet(im.currentSrc || im.src);
+  if (im.dataset && im.dataset.orig) {
     const o = im.dataset.orig; delete im.dataset.orig; im.src = o;
   }
 }, true);
+function swVergeet(url) {
+  if (!url || url.indexOf('http') !== 0) return;
+  try { if (navigator.serviceWorker && navigator.serviceWorker.controller) navigator.serviceWorker.controller.postMessage({type: 'vergeet', url: url}); } catch (e) {}
+}
 
 function esc(s) {
   return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -4853,15 +4884,18 @@ function refreshLightbox() {
   const fig = document.getElementById('lbFigure');
 
   if (typeof lbResetZoom === 'function') lbResetZoom(false);   // nieuwe foto: niet ingezoomd beginnen
-  fig.classList.remove('portrait', 'landscape');
+  // Zolang de foto nog niet binnen is (of niet wil laden) alvast de liggende
+  // indeling: zonder klasse staat de figuur in een rij en schoof de tekst naast
+  // de foto, buiten het scherm.
+  fig.classList.remove('portrait');
+  fig.classList.add('landscape');
   el.removeAttribute('width'); el.removeAttribute('height');
   el.onload = function() {
     const staand = el.naturalHeight > el.naturalWidth * 1.02;
     fig.classList.remove('portrait', 'landscape');
     fig.classList.add(staand ? 'portrait' : 'landscape');
   };
-  el.src = img.src;
-  if (el.complete && el.naturalWidth) el.onload();
+  lbLaadFoto(el, img, list, _lb.i);
 
   document.getElementById('lbCap').innerHTML = metaLine(img) + (img.caption ? '<p>' + esc(img.caption) + '</p>' : '');
   const lbMeta = document.getElementById('lbMeta');
@@ -4894,32 +4928,72 @@ function refreshLightbox() {
   const meer = list.length > 1 || (!!_lbGroep && _lbGroep.indexOf(_lb.id) >= 0);
   document.getElementById('lbPrev').hidden = !meer;
   document.getElementById('lbNext').hidden = !meer;
-  if (meer) lbVoorafLaden(list, _lb.i);
+}
+
+// De foto in de lightbox laden.
+// - De vorige foto blijft niet staan; zolang de volledige foto nog onderweg is,
+//   staat de kleine versie (die de tegel al toonde en dus meestal al bewaard is)
+//   met een laadmelding erbij.
+// - Mislukt het laden, dan wordt het bewaarde antwoord uit de offline-voorraad
+//   gehaald en nog één keer geprobeerd; daarna een melding met "Opnieuw proberen"
+//   in plaats van een zwart vlak.
+var _lbLaad = 0;
+function lbLaadFoto(el, img, list, i) {
+  const nr = ++_lbLaad;
+  const vol = img.src || '';
+  const isWeb = vol.indexOf('http') === 0;
+  const klein = (isWeb && !img.spot) ? kleinUrl(img, 900) : '';
+  lbToonLaden(false); lbToonFout(false);
+  const toon = u => { if (nr === _lbLaad && el.getAttribute('src') !== u) el.src = u; };
+  let poging = 0;
+  const haal = () => {
+    const pre = new Image();
+    pre.decoding = 'async';
+    pre.onload = () => {
+      if (nr !== _lbLaad) return;
+      toon(vol); lbToonLaden(false);
+      if (list && list.length > 1) lbVoorafLaden(list, i);
+    };
+    pre.onerror = () => {
+      if (nr !== _lbLaad) return;
+      if (poging++ === 0) {                     // één keer opnieuw, na opruimen van de voorraad
+        swVergeet(vol);
+        setTimeout(() => { if (nr === _lbLaad) haal(); }, 600);
+        return;
+      }
+      lbToonLaden(false); lbToonFout(true);
+    };
+    pre.src = vol;
+    return pre;
+  };
+  const pre = haal();
+  if (pre.complete && pre.naturalWidth) { toon(vol); return; }   // al in het geheugen
+  if (klein && klein !== vol) toon(klein); else el.removeAttribute('src');
+  lbToonLaden(true);
+}
+function lbToonLaden(aan) { const n = document.getElementById('lbLaden'); if (n) n.hidden = !aan; }
+function lbToonFout(aan) { const n = document.getElementById('lbFout'); if (n) n.hidden = !aan; }
+function lbOpnieuw() {
+  if (!_lb) return;
+  const img = (_slides[_lb.id] || [])[_lb.i];
+  if (img && img.src) swVergeet(img.src);
+  refreshLightbox();
 }
 
 // De volgende en vorige foto alvast ophalen, zodat vegen op een traag netwerk
-// niet eerst een leeg vlak laat zien. Hooguit twee tegelijk, pas als de
-// huidige foto binnen is.
+// niet eerst een leeg vlak laat zien. Pas als de huidige foto binnen is.
 var _lbVooraf = {};
 function lbVoorafLaden(list, i) {
-  const el = document.getElementById('lbImg');
-  const start = () => {
-    [1, -1].forEach(d => {
-      const img = list[(i + d + list.length) % list.length];
-      if (!img || !img.src || _lbVooraf[img.src]) return;
-      const pre = new Image();
-      pre.decoding = 'async';
-      pre.src = img.src;
-      _lbVooraf[img.src] = pre;
-      const keys = Object.keys(_lbVooraf);
-      if (keys.length > 12) delete _lbVooraf[keys[0]];
-    });
-  };
-  if (el.complete && el.naturalWidth) start();
-  else {
-    const prev = el.onload;
-    el.onload = function () { if (prev) prev.call(el); el.onload = prev; start(); };
-  }
+  [1, -1].forEach(d => {
+    const img = list[(i + d + list.length) % list.length];
+    if (!img || !img.src || _lbVooraf[img.src]) return;
+    const pre = new Image();
+    pre.decoding = 'async';
+    pre.src = img.src;
+    _lbVooraf[img.src] = pre;
+    const keys = Object.keys(_lbVooraf);
+    if (keys.length > 12) delete _lbVooraf[keys[0]];
+  });
 }
 
 // Eigen foto's van een dag (zonder de plaatjes uit het reisvoorstel) — voor het groepsbladeren.

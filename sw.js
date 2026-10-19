@@ -3,11 +3,13 @@
    internet opent. Foto's en lodgefoto's die je één keer hebt gezien, blijven
    ook bewaard. Gegevens (jsonbin), uploaden (imgbb) en het weer gaan altijd
    rechtstreeks naar internet; de pagina valt zelf terug op haar laatste kopie. */
-const VERSIE = 'tz-v5';
+const VERSIE = 'tz-v6';
 const SCHIL = 'tz-schil-' + VERSIE;
 const BEELD = 'tz-beeld';
 const FONT = 'tz-font';
 const MAX_BEELDEN = 1500;
+// Deze diensten sturen CORS-headers, dus daar zien we de echte status van een antwoord.
+const CORS_HOSTS = /^(i\.ibb\.co|wsrv\.nl)$/;
 
 const SCHIL_BESTANDEN = ['./', 'index.html', 'manifest.json', 'icon-180.png', 'icon-192.png', 'icon-512.png', 'img/hero.webp'];
 
@@ -92,7 +94,24 @@ async function beeld(req) {
   // een 'ondoorzichtig' antwoord is prima voor <img>, maar niet voor de
   // collage/PDF-maker (die tekent op een canvas en vraagt om CORS)
   if (hit && !(req.mode === 'cors' && hit.type === 'opaque')) return hit;
+  let host = '';
+  try { host = new URL(req.url).hostname; } catch (e) {}
   try {
+    if (CORS_HOSTS.test(host)) {
+      // Een gewone <img> vraagt 'zonder CORS' en krijgt dan altijd een
+      // 'ondoorzichtig' antwoord — ook als imgbb een 503 of een foutpagina
+      // stuurde. Dat werd vroeger bewaard, en die foto bleef daarna op dit
+      // apparaat voorgoed zwart. Daarom hier mét CORS ophalen: dan is de
+      // status zichtbaar en bewaren we alleen een geslaagd antwoord.
+      let res = null;
+      try { res = await fetch(req.url, {mode: 'cors', credentials: 'omit'}); } catch (e) { res = null; }
+      if (res && res.ok) {
+        cache.put(req.url, res.clone()).then(snoei).catch(() => {});
+        return res;
+      }
+      if (res) return res;                       // echte foutstatus: tonen mislukt, niets bewaren
+      return await fetch(req);                   // CORS lukte niet: gewoon tonen, niet bewaren
+    }
     const res = await fetch(req);
     if (res && (res.ok || res.type === 'opaque')) {
       cache.put(req.url, res.clone()).then(snoei).catch(() => {});
@@ -101,6 +120,12 @@ async function beeld(req) {
   } catch (e) {
     return hit || Response.error();
   }
+}
+
+// De pagina meldt een foto die niet wilde laden: haal hem uit de voorraad,
+// zodat een eerder bewaard mislukt antwoord niet blijft hangen.
+async function vergeet(url) {
+  try { const c = await caches.open(BEELD); await c.delete(url); } catch (e) {}
 }
 
 async function lettertype(req) {
@@ -129,6 +154,7 @@ self.addEventListener('message', e => {
   const d = e.data || {};
   if (d.type === 'bewaar' && Array.isArray(d.urls)) e.waitUntil(bewaarLijst(d.urls, d.id, e.source));
   if (d.type === 'telling') e.waitUntil(telling(e.source));
+  if (d.type === 'vergeet' && typeof d.url === 'string') e.waitUntil(vergeet(d.url));
 });
 
 async function telling(bron) {
@@ -149,7 +175,8 @@ async function bewaarLijst(urls, id, bron) {
         if (!(await cache.match(u))) {
           let res = null;
           try { res = await fetch(u, {mode: 'cors'}); } catch (e) { res = null; }
-          if (!res || !res.ok) res = await fetch(u, {mode: 'no-cors'});
+          let host = ''; try { host = new URL(u).hostname; } catch (e) {}
+          if ((!res || !res.ok) && !CORS_HOSTS.test(host)) res = await fetch(u, {mode: 'no-cors'});
           if (res && (res.ok || res.type === 'opaque')) await cache.put(u, res); else mis++;
         }
       } catch (e) { mis++; }
