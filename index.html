@@ -4966,6 +4966,8 @@ function lbLaadFoto(el, img, list, i) {
     pre.src = vol;
     return pre;
   };
+  // staat precies deze foto er al (hertekenen na ster/verhaal/verwijderen)? dan niets vervangen
+  if (el.getAttribute('src') === vol && el.complete && el.naturalWidth) { if (el.onload) el.onload(); return; }
   const pre = haal();
   if (pre.complete && pre.naturalWidth) { toon(vol); return; }   // al in het geheugen
   if (klein && klein !== vol) toon(klein); else el.removeAttribute('src');
