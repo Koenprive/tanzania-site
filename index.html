@@ -2092,6 +2092,8 @@ nav{position:-webkit-sticky;position:sticky;}
 
 /* ─────────── FOTO'S VERSLEPEN (volgorde per dag) ─────────── */
 .fotovolgorde{margin-top:1.1rem;}
+/* volgorde veranderen kan alleen ingelogd — het strookje pas tonen na het slot */
+body:not(.ingelogd) .fotovolgorde{display:none !important;}
 .fotovolgorde[hidden]{display:none;}
 .fv-kop{display:flex;align-items:center;justify-content:space-between;gap:.6rem;flex-wrap:wrap;margin-bottom:.5rem;}
 .fv-titel{font-size:.66rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}
@@ -4471,6 +4473,8 @@ var _pogingen = 0, _blokTot = 0;
 // Slotje in de menubalk: dicht = nog niet ingelogd, open (groen) = ingelogd.
 // Tikken: inloggen, of (als je ingelogd bent) weer vergrendelen.
 function toonSlot() {
+  // body.ingelogd stuurt wat alleen ingelogd zichtbaar is (bv. het volgorde-strookje)
+  if (document.body) document.body.classList.toggle('ingelogd', !!_keys);
   const k = document.getElementById('slotKnop');
   if (!k) return;
   k.classList.toggle('open', !!_keys);
