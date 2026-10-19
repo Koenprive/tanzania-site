@@ -8114,6 +8114,108 @@ async function tekenBladPdf(b, nr, totaal, melden) {
   return c;
 }
 
+// ── Programma-pagina's in de PDF ──
+// Vóór de foto's van elke overnachtingsplek komt een tekstpagina met, dag voor
+// dag, de titel, de plek en de (eventueel zelf aangepaste) beschrijving van de
+// dagen waarvan er foto's in dat hoofdstuk staan. Een dag staat maar één keer
+// (dag 11–17 valt bij twee verblijven). Past het niet op één pagina, dan loopt
+// het door op een vervolgpagina.
+function pdfRegels(ctx, tekst, maxB) {
+  const uit = [];
+  String(tekst || '').split('\n').forEach(alinea => {
+    const w = alinea.trim().split(/\s+/).filter(Boolean);
+    if (!w.length) { uit.push(''); return; }
+    let r = '';
+    w.forEach(woord => {
+      const t = r ? r + ' ' + woord : woord;
+      if (ctx.measureText(t).width > maxB && r) { uit.push(r); r = woord; } else r = t;
+    });
+    uit.push(r);
+  });
+  while (uit.length && uit[uit.length - 1] === '') uit.pop();
+  return uit;
+}
+
+function pdfPaginasMetTekst(max) {
+  const pag = boekPaginas(max), uit = [], gedaan = {};
+  let vorige = null;
+  pag.forEach(b => {
+    if (b.h !== vorige) {
+      vorige = b.h;
+      const dagen = [];
+      b.h.fotos.forEach(f => { if (!gedaan[f.dayId]) { gedaan[f.dayId] = true; dagen.push(DAYS.find(d => d.id === f.dayId)); } });
+      if (dagen.length) uit.push({tekst: true, h: b.h, kop: b.kop, dagen: dagen.filter(Boolean)});
+    }
+    uit.push(b);
+  });
+  return uit;
+}
+
+// Tekent de programma-pagina('s) van één hoofdstuk; geeft een lijst canvassen.
+async function tekenTekstPdf(b, nrStart, totaalFn) {
+  const gw = PB - 2 * PM, onder = PH - 120, REGEL = 34;
+  const meet = document.createElement('canvas').getContext('2d');
+  meet.font = '400 23px Inter, system-ui, sans-serif';
+  // blokken: per dag kop + regels (hoogte vooraf, zodat we netjes kunnen afbreken)
+  const blokken = b.dagen.map(d => {
+    const regels = pdfRegels(meet, dagBeschrijving(d.id), gw);
+    return {d: d, regels: regels, hoogte: 118 + regels.length * REGEL};
+  });
+  const canvassen = [];
+  let i = 0, deel = 0;
+  while (i < blokken.length) {
+    const [c, ctx] = pdfCanvas();
+    ctx.fillStyle = '#FFFDF9'; ctx.fillRect(0, 0, PB, PH);
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = '#B4622D'; ctx.fillRect(PM, 118, 44, 3);
+    ctx.font = '600 20px Inter, system-ui, sans-serif';
+    ctx.fillText('D A G   V O O R   D A G', PM + 60, 126);
+    let tekstBreed = gw;
+    if (b.kop.lodge && deel === 0) {
+      const im = await cgLaad(vbMini(b.kop.lodge, 0));
+      if (im) {
+        const r = 64, cx = PB - PM - r, cy = 190;
+        ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, r + 5, 0, Math.PI * 2); ctx.fillStyle = '#FFFFFF'; ctx.fill(); ctx.restore();
+        try { cgCover(ctx, im, cx - r, cy - r, 2 * r, 2 * r, r); } catch (e) {}
+        im.src = '';
+        tekstBreed = gw - 2 * r - 30;
+      }
+    }
+    ctx.fillStyle = '#191512'; ctx.font = '400 66px Fraunces, Georgia, serif';
+    ctx.fillText(pdfTekstKort(ctx, b.kop.titel + (deel > 0 ? ' (vervolg)' : ''), tekstBreed), PM - 3, 204);
+    ctx.fillStyle = '#807668'; ctx.font = '400 24px Inter, system-ui, sans-serif';
+    ctx.fillText(pdfTekstKort(ctx, b.kop.meta, tekstBreed), PM, 246);
+    ctx.fillStyle = '#E8E2D7'; ctx.fillRect(PM, 280, gw, 2);
+    let y = 350, eerst = true;
+    while (i < blokken.length && (eerst || y + blokken[i].hoogte <= onder)) {
+      const bl = blokken[i], d = bl.d;
+      // streepje + dagbadge + datum
+      ctx.fillStyle = '#B4622D'; ctx.font = '600 19px Inter, system-ui, sans-serif';
+      ctx.fillText((d.days + '  ·  ' + d.date).toUpperCase().split('').join(' '), PM, y);
+      ctx.fillStyle = '#191512'; ctx.font = '400 40px Fraunces, Georgia, serif';
+      ctx.fillText(pdfTekstKort(ctx, d.title, gw), PM - 1, y + 48);
+      ctx.fillStyle = '#807668'; ctx.font = '400 21px Inter, system-ui, sans-serif';
+      ctx.fillText(pdfTekstKort(ctx, d.loc, gw), PM, y + 82);
+      ctx.fillStyle = '#3F362E'; ctx.font = '400 23px Inter, system-ui, sans-serif';
+      let ry = y + 122;
+      for (let k = 0; k < bl.regels.length; k++) {
+        if (ry > onder) break;   // een extreem lange tekst: afkappen in plaats van doorlopen
+        ctx.fillText(bl.regels[k], PM, ry); ry += REGEL;
+      }
+      y += bl.hoogte + 40;
+      i++; eerst = false;
+    }
+    // voet
+    ctx.fillStyle = '#E8E2D7'; ctx.fillRect(PM, PH - 92, gw, 1);
+    ctx.fillStyle = '#807668'; ctx.font = '400 20px Inter, system-ui, sans-serif';
+    ctx.fillText('Tanzania & Zanzibar 2026', PM, PH - 56);
+    const t = (nrStart + canvassen.length) + ' / ' + totaalFn(); ctx.fillText(t, PB - PM - ctx.measureText(t).width, PH - 56);
+    canvassen.push(c);
+    deel++;
+  }
+  return canvassen;
+}
+
 // ── Omslagfoto kiezen vóór het maken van de PDF ──
 // De keuze wordt op dit apparaat onthouden (localStorage) en ook in het boek
 // op het scherm getoond. Bestaat de foto niet meer, dan telt de keuze niet.
@@ -8210,7 +8312,7 @@ var _albumPdf = null;   // {blob, naam}
 async function heelAlbumPdf() {
   if (_cgBezig) return;
   const opties = pdfOpties();
-  const pag = boekPaginas(opties.max), tot = boekTotaal();
+  const pag = pdfPaginasMetTekst(opties.max), tot = boekTotaal();
   if (!tot) return;
   if (!await ensureUnlocked('Wachtwoord om het album te maken:')) return;
   if (_cgBezig) return;
@@ -8222,7 +8324,10 @@ async function heelAlbumPdf() {
   if (knop) knop.disabled = true;
   try {
     try { await document.fonts.ready; } catch (e) {}
-    const plekken = new Set(pag.filter(x => x.h.s !== '_thuis').map(x => x.h)).size, totaal = pag.length + 1;
+    const plekken = new Set(pag.filter(x => x.h.s !== '_thuis').map(x => x.h)).size;
+    // tekstpagina's kunnen doorlopen; het totaal weten we pas als ze getekend zijn.
+    // Schatting vooraf (1 per hoofdstuk); de voet van de fotopagina's krijgt het echte getal.
+    let totaal = pag.length + 1;
     const paginas = [];
     melden('Omslag…');
     const om = await tekenOmslagPdf(tot, plekken, omslagFoto());
@@ -8230,10 +8335,30 @@ async function heelAlbumPdf() {
     paginas.push({jpg: await blobBytes(omJpg), w: om.width, h: om.height});
     om.width = om.height = 0;
     let gedaan = 0;
+    // Eerst de programma-pagina's tekenen (die bepalen het totaal), daarna de foto's.
+    const tekstCanvassen = new Map();
     for (let k = 0; k < pag.length; k++) {
-      const c = await tekenBladPdf(pag[k], k + 2, totaal, () => { gedaan++; melden('Bezig… ' + gedaan + '/' + tot); });
+      if (!pag[k].tekst) continue;
+      melden('Programma…');
+      const cs = await tekenTekstPdf(pag[k], 0, () => 0);
+      tekstCanvassen.set(pag[k], cs);
+      totaal += cs.length - 1;
+    }
+    let nr = 2;
+    for (let k = 0; k < pag.length; k++) {
+      if (pag[k].tekst) {
+        // opnieuw tekenen met het juiste paginanummer (goedkoop: alleen tekst)
+        tekstCanvassen.get(pag[k]).forEach(c => { c.width = c.height = 0; });
+        const cs = await tekenTekstPdf(pag[k], nr, () => totaal);
+        for (const c of cs) {
+          paginas.push({jpg: await blobBytes(await canvasJpeg(c, pdfKwaliteit())), w: c.width, h: c.height});
+          c.width = c.height = 0; nr++;
+        }
+        continue;
+      }
+      const c = await tekenBladPdf(pag[k], nr, totaal, () => { gedaan++; melden('Bezig… ' + gedaan + '/' + tot); });
       paginas.push({jpg: await blobBytes(await canvasJpeg(c, pdfKwaliteit())), w: c.width, h: c.height});
-      c.width = c.height = 0;
+      c.width = c.height = 0; nr++;
     }
     melden('PDF maken…');
     const pdf = maakPdf(paginas, 'Tanzania & Zanzibar 2026 - fotoalbum');
@@ -8253,7 +8378,7 @@ async function heelAlbumPdf() {
       'Fotoalbum · ' + totaal + " pagina's · " + tot + ' foto' + (tot === 1 ? '' : "'s") + ' · ' + opties.dpi + ' dpi · ' + (Math.round(pdf.size / 1024 / 1024 * 10) / 10) + ' MB';
     const hint = document.getElementById('collageHint');
     if (hint) { if (_boekHint === null) _boekHint = hint.innerHTML;
-      hint.innerHTML = 'Eén PDF op A4 (' + opties.dpi + ' dpi): een omslag en per overnachtingsplek een nieuwe pagina (hooguit ' + opties.max + ' foto\u2019s per pagina). Op de telefoon kun je hem met <em>Delen</em> in Bestanden bewaren of via WhatsApp versturen.'; }
+      hint.innerHTML = 'Eén PDF op A4 (' + opties.dpi + ' dpi): een omslag en per overnachtingsplek eerst een pagina met het programma dag voor dag, daarna de foto\u2019s (hooguit ' + opties.max + ' per pagina). Op de telefoon kun je hem met <em>Delen</em> in Bestanden bewaren of via WhatsApp versturen.'; }
     const deel = document.getElementById('collageDeel');
     let kanDelen = false;
     try { kanDelen = !!(navigator.canShare && navigator.canShare({files: [new File([pdf], naam, {type: 'application/pdf'})]})); } catch (e) {}
