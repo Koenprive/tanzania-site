@@ -1988,6 +1988,10 @@ nav{position:-webkit-sticky;position:sticky;}
 .nav-knoppen{display:flex;gap:8px;align-items:center;margin-left:auto;flex-shrink:0}
 .nav-knoppen .weerknop{margin-left:0}
 .slotknop{color:var(--muted)}
+.versknop{color:var(--muted)}
+.versknop:disabled{cursor:default;opacity:.8}
+.versknop.draait svg{animation:versdraai .9s linear infinite}
+@keyframes versdraai{to{transform:rotate(360deg)}}
 .slotknop .slot-open{display:none}
 .slotknop.open{color:var(--green);border-color:var(--green);background:#EEF6EE}
 .slotknop.open .slot-dicht{display:none}
@@ -2244,7 +2248,8 @@ body.sleepbezig{-webkit-user-select:none;user-select:none;cursor:grabbing;}
       <li><button class="tabknop" data-tab="info" onclick="toonTab('info')">Info</button></li>
     </ul>
     <span class="nav-knoppen"><button class="weerknop slotknop" id="slotKnop" type="button" onclick="slotKlik()" title="Vergrendeld — tik om in te loggen" aria-label="Inloggen of vergrendelen"><svg class="slot-dicht" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2.2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15.5" r="1.2" fill="currentColor"/></svg><svg class="slot-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2.2"/><path d="M8 10.5V7.5a4 4 0 0 1 7.6-1.8"/><circle cx="12" cy="15.5" r="1.2" fill="currentColor"/></svg></button>
-    <button class="weerknop" id="weerKnop" type="button" title="Het weer in Tanzania" aria-label="Toon het weer in Tanzania en op Zanzibar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="9" r="3.2"/><path d="M9 2.6v1.6M9 13.8v1.6M2.6 9h1.6M13.8 9h1.6M4.5 4.5l1.1 1.1M12.4 12.4l1.1 1.1M13.5 4.5l-1.1 1.1M5.6 12.4 4.5 13.5"/><path d="M12.2 20.5H18a3 3 0 1 0-.6-5.9 4.2 4.2 0 0 0-8-.9 3.4 3.4 0 0 0 .8 6.8h2Z" fill="var(--surface)"/></svg></button></span>
+    <button class="weerknop" id="weerKnop" type="button" title="Het weer in Tanzania" aria-label="Toon het weer in Tanzania en op Zanzibar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="9" r="3.2"/><path d="M9 2.6v1.6M9 13.8v1.6M2.6 9h1.6M13.8 9h1.6M4.5 4.5l1.1 1.1M12.4 12.4l1.1 1.1M13.5 4.5l-1.1 1.1M5.6 12.4 4.5 13.5"/><path d="M12.2 20.5H18a3 3 0 1 0-.6-5.9 4.2 4.2 0 0 0-8-.9 3.4 3.4 0 0 0 .8 6.8h2Z" fill="var(--surface)"/></svg></button>
+    <button class="weerknop versknop" id="versKnop" type="button" onclick="verversSite()" title="Nieuwste versie van de site ophalen" aria-label="Nieuwste versie van de site ophalen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v4.5h-4.5"/></svg></button></span>
   </div>
   <span class="nav-voortgang" id="navVoortgang"></span>
 </nav>
@@ -8706,6 +8711,34 @@ function vernieuwSite(knop) {
   const nieuw = location.pathname + (zoek && zoek !== '?' ? zoek + '&' : '?') + 'r=' + Date.now() + location.hash;
   setTimeout(() => { try { location.replace(nieuw); } catch (e) { location.href = nieuw; } }, 1500);
   try { location.reload(); } catch (e) {}
+}
+
+// Ververs-knop naast het slotje: de bewaarde kopie van de pagina weggooien
+// (alleen de pagina — offline bewaarde foto's en lettertypen blijven staan),
+// sw.js om een update vragen en dan opnieuw laden via vernieuwSite().
+async function verversSite() {
+  const k = document.getElementById('versKnop');
+  if (navigator.onLine === false) {
+    if (typeof toonVolgordeMelding === 'function') toonVolgordeMelding('Geen internet \u2014 vernieuwen lukt pas met verbinding');
+    return;
+  }
+  if (k) { k.disabled = true; k.classList.add('draait'); }
+  if (typeof toonVolgordeMelding === 'function') toonVolgordeMelding('Nieuwste versie ophalen\u2026');
+  try {
+    if (window.caches) {
+      const ks = await caches.keys();
+      for (const naam of ks) {
+        if (!naam.startsWith('tz-schil-')) continue;
+        const c = await caches.open(naam);
+        await Promise.all(['index.html', './', location.pathname].map(x => c.delete(x, {ignoreSearch: true}).catch(() => false)));
+      }
+    }
+    if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (reg) await Promise.race([reg.update().catch(() => null), new Promise(r => setTimeout(r, 2500))]);
+    }
+  } catch (e) {}
+  vernieuwSite();
 }
 
 // Na het vernieuwen: ?r=… weer uit het adres halen en even bevestigen.
