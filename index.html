@@ -560,6 +560,8 @@ footer{background:var(--ink);color:rgba(255,255,255,.55);padding:3.5rem 0 calc(2
 .footer-fine{margin-top:1.6rem;font-size:.7rem;color:rgba(255,255,255,.3);letter-spacing:.06em;}
 .footer-teller{margin-top:.9rem;font-size:.62rem;color:rgba(255,255,255,.22);letter-spacing:.08em;font-variant-numeric:tabular-nums;min-height:1em;}
 .footer-teller b{font-weight:500;color:rgba(255,255,255,.34);}
+.footer-teller.footer-dag{margin-top:.3rem;}
+.footer-teller.footer-dag:empty{display:none;}
 
 /* ─────────── ANIMATION ─────────── */
 @keyframes riseIn{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
@@ -769,6 +771,21 @@ footer{background:var(--ink);color:rgba(255,255,255,.55);padding:3.5rem 0 calc(2
 }
 .lb-btn:hover{background:rgba(255,255,255,.26);}
 .lb-btn[hidden]{display:none;}
+/* duimpje linksboven: aantal + geven (één keer per apparaat) */
+.lb-duim{
+  position:absolute;top:calc(14px + env(safe-area-inset-top,0px));left:calc(14px + env(safe-area-inset-left,0px));z-index:4;
+  height:38px;padding:0 14px 0 11px;border-radius:19px;border:none;cursor:pointer;
+  background:rgba(255,255,255,.12);color:#fff;display:flex;align-items:center;gap:7px;
+  font:500 .85rem/1 var(--sans);font-variant-numeric:tabular-nums;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:background .2s,transform .15s;
+}
+.lb-duim:hover{background:rgba(255,255,255,.26);}
+.lb-duim.on{background:var(--accent);}
+.lb-duim.on svg{fill:#fff;}
+.lb-duim.klik{transform:scale(1.18);}
+.lb-duim[hidden]{display:none;}
+.lb-duim span:empty{display:none;}
+.lightbox.zoomed .lb-duim{opacity:0;pointer-events:none;}
 .lb-nav{
   position:absolute;top:50%;transform:translateY(-50%);z-index:4;
   width:46px;height:46px;border-radius:50%;border:none;cursor:pointer;
@@ -799,6 +816,7 @@ footer{background:var(--ink);color:rgba(255,255,255,.55);padding:3.5rem 0 calc(2
   .lb-btn{width:44px;height:44px;position:relative;}
   .lb-btn::after{content:'';position:absolute;inset:-5px;border-radius:50%;}
   .lb-btn:last-child{background:rgba(255,255,255,.22);}
+  .lb-duim{top:max(calc(env(safe-area-inset-top,0px) + 16px),60px);left:max(env(safe-area-inset-left,0px),10px);height:44px;border-radius:22px;}
 }
 
 /* ─────────── FOTO-STIPPEN OP DE KAART ─────────── */
@@ -2649,6 +2667,7 @@ body.sleepbezig{-webkit-user-select:none;user-select:none;cursor:grabbing;}
     <p class="footer-names">Nienke &middot; Maarten &middot; Esther &middot; Koen</p>
     <p class="footer-fine">Reisvoorstel door Tanzania Specialist &middot; oktober 2026</p>
     <p class="footer-teller" id="bezoekTeller" aria-live="polite"></p>
+    <p class="footer-teller footer-dag" id="dagTeller"></p>
   </div>
 </footer>
 
@@ -2680,6 +2699,7 @@ body.sleepbezig{-webkit-user-select:none;user-select:none;cursor:grabbing;}
     <button class="lb-btn" id="lbEdit" onclick="editFromLightbox()" title="Verhaal schrijven of aanpassen"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
     <button class="lb-btn" onclick="closeLightbox()" title="Sluiten (Esc)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
   </div>
+  <button class="lb-duim" id="lbDuim" hidden onclick="duimGeven()" title="Duimpje geven" aria-label="Duimpje geven"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 11v9H4.5A1.5 1.5 0 0 1 3 18.5v-6A1.5 1.5 0 0 1 4.5 11H7Z"/><path d="M7 11l3.6-7.2A1.8 1.8 0 0 1 13 3.3l.6.3a1.8 1.8 0 0 1 .9 2L13.6 10H19a2 2 0 0 1 2 2.4l-1.3 6A2 2 0 0 1 17.7 20H7"/></svg><span id="lbDuimN"></span></button>
   <button class="lb-nav prev" id="lbPrev" onclick="lbStep(-1)" aria-label="Vorige foto">&#8249;</button>
   <button class="lb-nav next" id="lbNext" onclick="lbStep(1)" aria-label="Volgende foto">&#8250;</button>
   <figure class="lb-figure" id="lbFigure">
@@ -4831,6 +4851,7 @@ function refreshLightbox() {
   if (dagKnop) dagKnop.hidden = !!img.isPdf || isSpot;
   const vervKnop = document.getElementById('lbVervang');
   if (vervKnop) vervKnop.hidden = !isSpot;
+  if (typeof ververseDuim === 'function') ververseDuim(img);
   if (!isSpot) zetHash('f=' + _lb.id + '-' + _lb.i);
   const meer = list.length > 1 || (!!_lbGroep && _lbGroep.indexOf(_lb.id) >= 0);
   document.getElementById('lbPrev').hidden = !meer;
@@ -6183,6 +6204,7 @@ function openDagPagina(id, stil) {
   }
   naarBovenkantInhoud(!!stil);
   bijwerkVoortgang();
+  if (typeof telDagOpen === 'function') telDagOpen(id);
 }
 
 function zetPaneelTerug(id) {
@@ -7559,9 +7581,11 @@ function openVandaagBijStart() {
   const id = currentDayId();
   if (!id || !DAYS.some(d => d.id === id)) return false;
   _dagLinkGedaan = true;
+  _dagAutoId = id;   // automatisch geopend → telt niet mee als "bekeken dag"
   setTimeout(() => springNaarDag(id), 350);
   return true;
 }
+var _dagAutoId = null;
 
 function toonQrGroot() {
   try { tekenQrOp('qrGrootDoek', 620, 2); } catch (e) { return; }
@@ -8787,12 +8811,14 @@ function tellerDatum() {
   const d = new Date();
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
-function toonTeller(vandaag, totaal) {
+function toonTeller(vandaag, totaal, uniek) {
   const el = document.getElementById('bezoekTeller');
   if (!el) return;
-  if (vandaag == null && totaal == null) { el.textContent = ''; return; }
+  if (vandaag == null && totaal == null && uniek == null) { el.textContent = ''; return; }
   const nl = n => (n == null ? '–' : Number(n).toLocaleString('nl-NL'));
-  el.innerHTML = 'Bezoekers vandaag <b>' + nl(vandaag) + '</b> &middot; totaal <b>' + nl(totaal) + '</b>';
+  el.innerHTML = 'Bezoekers vandaag <b>' + nl(vandaag) + '</b>' +
+    (uniek != null ? ' &middot; uniek <b>' + nl(uniek) + '</b>' : '') +
+    ' &middot; bezoeken totaal <b>' + nl(totaal) + '</b>';
 }
 async function tellerVraag(actie, sleutel) {
   const res = await fetch(TELLER_API + '/' + actie + '/' + TELLER_NS + '/' + sleutel, {cache: 'no-store'});
@@ -8805,17 +8831,149 @@ async function telBezoek() {
   const dag = tellerDatum();
   let onthouden = null;
   try { onthouden = JSON.parse(localStorage.getItem('tz_teller') || 'null'); } catch (e) {}
-  if (onthouden) toonTeller(onthouden.dag === dag ? onthouden.vandaag : null, onthouden.totaal);
-  if (!navigator.onLine) return;
-  let alGeteld = false;
+  if (onthouden) toonTeller(onthouden.dag === dag ? onthouden.vandaag : null, onthouden.totaal, onthouden.uniek);
+  if (!navigator.onLine) { toonDagTeller(); return; }
+  let alGeteld = false, alUniek = false;
   try { alGeteld = localStorage.getItem('tz_bezoek') === dag; } catch (e) {}
+  try { alUniek = localStorage.getItem('tz_uniek') === '1'; } catch (e) {}   // ooit al eens geteld op dit apparaat
   const actie = alGeteld ? 'get' : 'hit';
   try {
-    const [vandaag, totaal] = await Promise.all([tellerVraag(actie, 'dag-' + dag), tellerVraag(actie, 'totaal')]);
+    const [vandaag, totaal, uniek] = await Promise.all([
+      tellerVraag(actie, 'dag-' + dag), tellerVraag(actie, 'totaal'), tellerVraag(alUniek ? 'get' : 'hit', 'uniek')
+    ]);
     if (!alGeteld) { try { localStorage.setItem('tz_bezoek', dag); } catch (e) {} }
-    toonTeller(vandaag, totaal);
-    try { localStorage.setItem('tz_teller', JSON.stringify({dag: dag, vandaag: vandaag, totaal: totaal})); } catch (e) {}
+    if (!alUniek) { try { localStorage.setItem('tz_uniek', '1'); } catch (e) {} }
+    toonTeller(vandaag, totaal, uniek);
+    try { localStorage.setItem('tz_teller', JSON.stringify({dag: dag, vandaag: vandaag, totaal: totaal, uniek: uniek})); } catch (e) {}
   } catch (e) { /* stil: de oude stand blijft staan */ }
+  toonDagTeller();
+}
+
+// ══════════ DUIMPJES PER FOTO + MEEST BEKEKEN DAG ══════════
+// Zelfde teller-dienst (Abacus). Een duimpje telt één keer per apparaat
+// (localStorage 'tz_duimen'); terugdraaien kan de dienst niet, dus de knop
+// blijft daarna "aan". Standen worden in het geheugen onthouden zolang de
+// pagina open staat, en in localStorage zodat er offline ook iets staat.
+var _duimStand = {};
+try { _duimStand = JSON.parse(localStorage.getItem('tz_duimstand') || '{}') || {}; } catch (e) {}
+function duimSleutel(src) {
+  let p = '';
+  try { p = new URL(src, location.href).pathname; } catch (e) { p = String(src || ''); }
+  p = p.replace(/\.[a-z0-9]+$/i, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  if (p.length > 50) p = p.slice(-50);
+  return 'foto-' + (p || 'x');
+}
+function duimGegeven() {
+  try { return JSON.parse(localStorage.getItem('tz_duimen') || '{}') || {}; } catch (e) { return {}; }
+}
+function duimBewaarStand() {
+  try {
+    const keys = Object.keys(_duimStand);
+    if (keys.length > 1500) keys.slice(0, keys.length - 1500).forEach(k => delete _duimStand[k]);
+    localStorage.setItem('tz_duimstand', JSON.stringify(_duimStand));
+  } catch (e) {}
+}
+function duimFotoInLightbox() {
+  if (!_lb) return null;
+  const img = (_slides[_lb.id] || [])[_lb.i];
+  if (!img || img.isPdf || img.spot || !img.src) return null;
+  return img;
+}
+function duimToon(sleutel) {
+  const knop = document.getElementById('lbDuim'), n = document.getElementById('lbDuimN');
+  if (!knop || !n) return;
+  const stand = _duimStand[sleutel];
+  const mijn = !!duimGegeven()[sleutel];
+  n.textContent = (stand == null) ? '' : String(stand);
+  knop.classList.toggle('on', mijn);
+  knop.title = mijn ? 'Jij vond deze foto mooi' : 'Duimpje geven';
+  knop.setAttribute('aria-label', knop.title + (stand != null ? ' (' + stand + ')' : ''));
+}
+// Aangeroepen vanuit refreshLightbox bij elke foto.
+function ververseDuim(img) {
+  const knop = document.getElementById('lbDuim');
+  if (!knop) return;
+  const ok = img && !img.isPdf && !img.spot && img.src;
+  knop.hidden = !ok;
+  if (!ok) return;
+  const sleutel = duimSleutel(img.src);
+  duimToon(sleutel);
+  if (!navigator.onLine) return;
+  tellerVraag('get', sleutel).then(v => {
+    if (v == null) return;
+    _duimStand[sleutel] = v;
+    duimBewaarStand();
+    const nu = duimFotoInLightbox();
+    if (nu && duimSleutel(nu.src) === sleutel) duimToon(sleutel);
+  }).catch(() => {});
+}
+var _duimBezig = false;
+async function duimGeven() {
+  const img = duimFotoInLightbox();
+  if (!img || _duimBezig) return;
+  const sleutel = duimSleutel(img.src);
+  const knop = document.getElementById('lbDuim');
+  if (duimGegeven()[sleutel]) { toonVolgordeMelding('Je had deze foto al een duimpje gegeven'); return; }
+  if (!navigator.onLine) { toonVolgordeMelding('Geen internet — probeer het straks nog eens'); return; }
+  _duimBezig = true;
+  const oud = _duimStand[sleutel];
+  _duimStand[sleutel] = (oud || 0) + 1;                       // alvast laten zien
+  const g = duimGegeven(); g[sleutel] = 1;
+  try { localStorage.setItem('tz_duimen', JSON.stringify(g)); } catch (e) {}
+  duimToon(sleutel);
+  if (knop) { knop.classList.add('klik'); setTimeout(() => knop.classList.remove('klik'), 180); }
+  try {
+    const v = await tellerVraag('hit', sleutel);
+    if (v != null) _duimStand[sleutel] = v;
+    duimBewaarStand();
+  } catch (e) {
+    if (oud == null) delete _duimStand[sleutel]; else _duimStand[sleutel] = oud;
+    delete g[sleutel];
+    try { localStorage.setItem('tz_duimen', JSON.stringify(g)); } catch (e2) {}
+    toonVolgordeMelding('Duimpje kon niet worden geteld');
+  }
+  _duimBezig = false;
+  const nu = duimFotoInLightbox();
+  if (nu && duimSleutel(nu.src) === sleutel) duimToon(sleutel);
+}
+
+// Dagpagina geopend: één tik per apparaat per dag(datum) per reisdag.
+function telDagOpen(id) {
+  if (!id) return;
+  if (typeof _dagAutoId !== 'undefined' && _dagAutoId === id) { _dagAutoId = null; return; }   // vanzelf geopend bij het starten
+  if (!navigator.onLine) return;
+  const dag = tellerDatum();
+  let st = {};
+  try { st = JSON.parse(localStorage.getItem('tz_dagopen') || '{}') || {}; } catch (e) {}
+  if (st[id] === dag) return;
+  st[id] = dag;
+  try { localStorage.setItem('tz_dagopen', JSON.stringify(st)); } catch (e) {}
+  tellerVraag('hit', 'open-' + id).catch(() => {});
+}
+// Voettekst: "Meest bekeken dag". Standen hooguit elk half uur ophalen.
+var DAGTELLER_VERS_MS = 30 * 60 * 1000;
+function toonDagTeller() {
+  const el = document.getElementById('dagTeller');
+  if (!el) return;
+  let kopie = null;
+  try { kopie = JSON.parse(localStorage.getItem('tz_dagstand') || 'null'); } catch (e) {}
+  const teken = stand => {
+    let beste = null;
+    DAYS.forEach(d => { const n = stand[d.id] || 0; if (n > 0 && (!beste || n > beste.n)) beste = {d: d, n: n}; });
+    el.innerHTML = beste
+      ? 'Meest bekeken dag <b>' + esc(beste.d.days + ' · ' + beste.d.title) + '</b> (' + Number(beste.n).toLocaleString('nl-NL') + '&times;)'
+      : '';
+  };
+  if (kopie && kopie.stand) teken(kopie.stand);
+  if (!navigator.onLine) return;
+  if (kopie && kopie.t && Date.now() - kopie.t < DAGTELLER_VERS_MS) return;
+  Promise.all(DAYS.map(d => tellerVraag('get', 'open-' + d.id).catch(() => null))).then(vals => {
+    const stand = {};
+    DAYS.forEach((d, i) => { if (vals[i] != null) stand[d.id] = vals[i]; });
+    if (!Object.keys(stand).length) return;
+    teken(stand);
+    try { localStorage.setItem('tz_dagstand', JSON.stringify({t: Date.now(), stand: stand})); } catch (e) {}
+  });
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(telBezoek, 800));
 else setTimeout(telBezoek, 800);
