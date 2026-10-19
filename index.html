@@ -885,6 +885,25 @@ footer{background:var(--ink);color:rgba(255,255,255,.55);padding:3.5rem 0 calc(2
 .fav-head{display:flex;align-items:baseline;gap:.7rem;margin-bottom:.9rem;}
 .fav-head h3{font-family:var(--display);font-size:1.15rem;font-weight:500;letter-spacing:-.02em;}
 .fav-head span{font-size:.76rem;color:var(--muted);}
+.duim-band{padding-top:1.6rem;padding-bottom:0;}
+.duim-band[hidden]{display:none;}
+.duim-wrap .fav-head{flex-wrap:wrap;}
+.duim-knop{margin-left:auto;font:500 .74rem/1 var(--sans);color:var(--accent);background:var(--surface);border:1px solid var(--line);border-radius:100px;padding:.42rem .8rem;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.duim-knop:hover{border-color:var(--accent);background:var(--accent-weak);}
+.duim-knop:disabled{opacity:.7;cursor:default;}
+.duim-strip{display:flex;gap:.7rem;overflow-x:auto;padding-bottom:.5rem;margin-bottom:.4rem;scrollbar-width:thin;}
+.duim-leeg{font-size:.82rem;color:var(--muted);line-height:1.55;margin-bottom:.6rem;}
+.duim-tegel{position:relative;flex:0 0 auto;width:150px;height:112px;padding:0;border:none;border-radius:12px;overflow:hidden;background:var(--surface-2);cursor:pointer;box-shadow:var(--shadow-sm);transition:transform .18s;-webkit-tap-highlight-color:transparent;}
+.duim-tegel img{width:100%;height:100%;object-fit:cover;display:block;}
+.duim-tegel:hover{transform:translateY(-3px);}
+.duim-tegel .tile-duim{left:6px;right:auto;}
+.duim-tegel .duim-dag{position:absolute;right:6px;bottom:6px;font-size:.58rem;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:rgba(12,8,4,.45);padding:.14rem .42rem;border-radius:100px;}
+.tile-duim{
+  position:absolute;top:6px;right:6px;display:inline-flex;align-items:center;gap:3px;
+  font-size:.64rem;font-weight:600;font-variant-numeric:tabular-nums;color:#fff;background:var(--accent);
+  padding:.16rem .46rem .16rem .38rem;border-radius:100px;pointer-events:none;box-shadow:0 1px 3px rgba(0,0,0,.35);
+}
+.tile-duim svg{width:11px;height:11px;}
 .slide-btn.on{background:var(--accent);}
 .slide-btn.on svg{fill:currentColor;}
 
@@ -2312,6 +2331,16 @@ body.sleepbezig{-webkit-user-select:none;user-select:none;cursor:grabbing;}
 
 <!-- ═══ TAB: ALBUM ═══ -->
 <div class="view" id="view-album" hidden>
+
+<!-- ── MEEST GELIEFD ── -->
+<section class="band band-white duim-band" id="geliefd" hidden>
+  <div class="wrap">
+    <div class="duim-wrap" id="duimWrap">
+      <div class="fav-head"><h3>Meest geliefd</h3><span id="duimInfo"></span><button type="button" class="duim-knop" id="duimBijwerk" onclick="duimAllesOphalen()">Bijwerken</button></div>
+      <div class="duim-strip" id="duimStrip"></div>
+    </div>
+  </div>
+</section>
 
 <!-- ── PHOTOS / UPLOAD ── -->
 <section class="band band-alt" id="fotos">
@@ -5238,9 +5267,10 @@ function buildRaster(dayId, allImgs) {
       ? `onclick="verwijderBasisFoto('${dayId}',${img.pdfIdx})" title="Deze foto uit het reisvoorstel weghalen" aria-label="Deze foto uit het reisvoorstel weghalen"`
       : `onclick="removePhoto('${dayId}',${img.idx})" title="Deze foto verwijderen" aria-label="Deze foto verwijderen"`;
     return `<span class="tile-cel${klas}">
-      <button class="tile" title="${tip}" onclick="openLightbox('${dayId}',${i})" aria-label="Foto ${i + 1} van ${n} groot bekijken">
+      <button class="tile" title="${tip}" onclick="openLightbox('${dayId}',${i})" aria-label="Foto ${i + 1} van ${n} groot bekijken"${img.isPdf ? '' : ` data-duim="${duimSleutel(img.src)}"`}>
         <img ${imgAttr(img, klas ? 900 : 420)} alt="${img.caption ? esc(img.caption.slice(0, 80)) : 'Foto ' + (i + 1)}" loading="lazy" decoding="async">
         ${img.fav ? `<span class="tile-star">${SVG.star}</span>` : ''}
+        ${img.isPdf ? '' : duimPilHtml(img.src)}
         ${img.isPdf ? '<span class="tile-bron">Reisvoorstel</span>' : ''}
         ${img.caption ? `<span class="tile-verhaal" title="Met verhaal">${VERHAAL_SVG}</span>` : ''}
         <span class="tile-nr">${i + 1}</span>
@@ -6875,6 +6905,7 @@ function renderFavs() {
     '<img ' + imgAttr(f.p, 360) + ' alt="" loading="lazy" decoding="async" title="' + esc([f.p.place, fmtTaken(f.p.taken)].filter(Boolean).join(' \u00b7 ')) +
     '" onclick="openLightbox(&#39;' + f.dayId + '&#39;,' + f.idx + ')">'
   ).join('');
+  if (typeof renderDuimTop === 'function') renderDuimTop();
 }
 
 function favFromLightbox() {
@@ -8972,6 +9003,86 @@ async function duimGeven() {
   _duimBezig = false;
   const nu = duimFotoInLightbox();
   if (nu && duimSleutel(nu.src) === sleutel) duimToon(sleutel);
+  ververseDuimPillen(); renderDuimTop();
+}
+
+// ── Meest geliefd: alle standen ophalen (op verzoek) en de toplijst tonen ──
+var DUIM_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 11v9H4.5A1.5 1.5 0 0 1 3 18.5v-6A1.5 1.5 0 0 1 4.5 11H7Z"/><path d="M7 11l3.6-7.2A1.8 1.8 0 0 1 13 3.3l.6.3a1.8 1.8 0 0 1 .9 2L13.6 10H19a2 2 0 0 1 2 2.4l-1.3 6A2 2 0 0 1 17.7 20H7"/></svg>';
+var DUIM_TOP = 12;
+function duimPilHtml(src) {
+  if (!src || typeof _duimStand !== 'object' || !_duimStand || typeof DUIM_SVG !== 'string') return '';
+  const n = _duimStand[duimSleutel(src)];
+  return n > 0 ? '<span class="tile-duim">' + DUIM_SVG + n + '</span>' : '';
+}
+// Pilletjes op de tegels van de dagpagina bijwerken zonder hertekenen.
+function ververseDuimPillen() {
+  document.querySelectorAll('.tile[data-duim]').forEach(t => {
+    const n = _duimStand[t.dataset.duim] || 0;
+    let p = t.querySelector('.tile-duim');
+    if (n > 0) {
+      if (!p) { p = document.createElement('span'); p.className = 'tile-duim'; t.appendChild(p); }
+      p.innerHTML = DUIM_SVG + n;
+    } else if (p) p.remove();
+  });
+}
+function alleFotoItems() {
+  const uit = [];
+  DAYS.forEach(d => (photos[d.id] || []).forEach((p, i) => { if (p.src) uit.push({dayId: d.id, idx: i, p: p}); }));
+  return uit;
+}
+function renderDuimTop() {
+  const wrap = document.getElementById('geliefd'), strip = document.getElementById('duimStrip'), info = document.getElementById('duimInfo');
+  if (!wrap || !strip) return;
+  const items = alleFotoItems();
+  wrap.hidden = items.length === 0;
+  if (!items.length) return;
+  let t = 0;
+  try { t = Number(localStorage.getItem('tz_duimstand_t') || 0); } catch (e) {}
+  const top = items.map(x => ({x: x, n: _duimStand[duimSleutel(x.p.src)] || 0}))
+    .filter(y => y.n > 0).sort((a, b) => b.n - a.n).slice(0, DUIM_TOP);
+  if (info) info.textContent = t ? 'stand van ' + new Date(t).toLocaleTimeString('nl-NL', {hour: '2-digit', minute: '2-digit'}) : '';
+  if (!top.length) {
+    strip.innerHTML = '<p class="duim-leeg">' + (t ? 'Nog geen foto met een duimpje. Tik in een foto linksboven op het duimpje.' :
+      'Tik op <b>Bijwerken</b> om te zien welke foto\u2019s de meeste duimpjes hebben.') + '</p>';
+    return;
+  }
+  strip.innerHTML = top.map(y => {
+    const d = DAYS.find(z => z.id === y.x.dayId);
+    return '<button type="button" class="duim-tegel" onclick="openLightbox(\'' + y.x.dayId + '\',' + y.x.idx + ')" title="' +
+      esc([d ? d.days : '', y.x.p.place, fmtTaken(y.x.p.taken)].filter(Boolean).join(' \u00b7 ')) + '">' +
+      '<img ' + imgAttr(y.x.p, 360) + ' alt="" loading="lazy" decoding="async">' +
+      '<span class="tile-duim">' + DUIM_SVG + y.n + '</span>' +
+      (d ? '<span class="duim-dag">' + esc(d.days) + '</span>' : '') + '</button>';
+  }).join('');
+}
+var _duimOphalen = false;
+async function duimAllesOphalen() {
+  const knop = document.getElementById('duimBijwerk');
+  if (_duimOphalen) return;
+  if (navigator.onLine === false) { toonVolgordeMelding('Geen internet \u2014 bijwerken lukt pas met verbinding'); return; }
+  const items = alleFotoItems();
+  if (!items.length) return;
+  _duimOphalen = true;
+  if (knop) { knop.disabled = true; knop.textContent = 'Bijwerken\u2026'; }
+  const sleutels = Array.from(new Set(items.map(x => duimSleutel(x.p.src))));
+  let klaar = 0, mis = 0;
+  const rij = sleutels.slice();
+  async function werker() {
+    while (rij.length) {
+      const k = rij.shift();
+      try { const v = await tellerVraag('get', k); if (v != null) _duimStand[k] = v; } catch (e) { mis++; }
+      klaar++;
+      if (knop && klaar % 5 === 0) knop.textContent = 'Bijwerken\u2026 ' + klaar + ' / ' + sleutels.length;
+    }
+  }
+  await Promise.all([werker(), werker(), werker(), werker(), werker(), werker()]);
+  if (mis < sleutels.length) { try { localStorage.setItem('tz_duimstand_t', String(Date.now())); } catch (e) {} }
+  duimBewaarStand();
+  _duimOphalen = false;
+  if (knop) { knop.disabled = false; knop.textContent = 'Bijwerken'; }
+  renderDuimTop(); ververseDuimPillen();
+  const totaal = sleutels.reduce((s, k) => s + (_duimStand[k] || 0), 0);
+  toonVolgordeMelding(mis ? 'Bijgewerkt, ' + mis + ' foto\u2019s niet gelukt' : totaal + ' duimpje' + (totaal === 1 ? '' : 's') + ' op ' + sleutels.length + ' foto\u2019s');
 }
 
 // Dagpagina geopend: één tik per apparaat per dag(datum) per reisdag.
