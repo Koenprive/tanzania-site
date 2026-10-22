@@ -3032,11 +3032,16 @@ const DAYS = [
    title:"Serengeti — Aankomst", lodge:"Mgunga Serengeti Luxury Camp",
    loc:"Serengeti NP (centraal/west)",
    desc:"Welkom in het bekendste wildpark ter wereld! De Serengeti is thuis aan meer dan 4000 leeuwen, 225 jachtluipaarden en de epische Grote Trek. De eerste indruk van deze eindeloze vlaktes is onvergetelijk."},
-  {id:"dag78",    label:"Dag 7–8 Serengeti", emoji:"🌅", days:"Dag 7–8", date:"22–23 okt", dotColor:"#6B4C2A",
+  {id:"dag7",     label:"Dag 7 — Serengeti", emoji:"🌅", days:"Dag 7",  date:"22 okt",    dotColor:"#6B4C2A",
    pdfImgs:[PDF_IMGS.ser_trek],
    title:"Serengeti — Deep Safari", lodge:"Mgunga Serengeti Luxury Camp",
    loc:"Serengeti NP",
-   desc:"Twee volle dagen op zoek naar de Grote Trek met miljoenen gnoes en zebra's. Jullie privéjeep en gids staan volledig tot beschikking. Overweeg de onvergetelijke luchtballonsafari bij zonsopgang!"},
+   desc:"Een volle dag op zoek naar de Grote Trek met miljoenen gnoes en zebra's. Jullie privéjeep en gids staan volledig tot beschikking."},
+  {id:"dag8",     label:"Dag 8 — Serengeti", emoji:"🎈", days:"Dag 8",  date:"23 okt",    dotColor:"#6B4C2A",
+   pdfImgs:[PDF_IMGS.ser_trek],
+   title:"Serengeti — Tweede safaridag", lodge:"Mgunga Serengeti Luxury Camp",
+   loc:"Serengeti NP",
+   desc:"Nog een volle dag op de eindeloze vlaktes van de Serengeti. Overweeg de onvergetelijke luchtballonsafari bij zonsopgang!"},
   {id:"dag9",     label:"Dag 9 — Ngorongoro",emoji:"🦏", days:"Dag 9",  date:"24 okt",    dotColor:"#7BAEC8",
    pdfImgs:[PDF_IMGS.ngoro_rhino, PDF_IMGS.ngoro_crater],
    title:"Ngorongoro Krater", lodge:"Manyara Best View Lodge & Spa",
@@ -3169,6 +3174,41 @@ function vulPlaats(lijst) {
   });
 }
 
+// ── Dag 7 en 8 waren tot 22 okt 2026 één dag ('dag78') ──
+// Oude records (jsonbin, kopie op dit apparaat, reservekopie) worden bij het
+// lezen gesplitst: foto's van 23 okt naar dag8, de rest naar dag7.
+// DAG78_SPIEGEL: zolang een telefoon nog de oude versie van de site open kan
+// hebben, schrijven we dag7+dag8 ook nog als 'dag78' mee (die oude versie
+// kent dag7/dag8 niet en zou ze anders bij het bewaren weggooien). Kost
+// ±170 bytes per foto extra in bin 1; op false zetten zodra iedereen de
+// nieuwe versie heeft (een paar dagen na 22 okt).
+const DAG78_SPIEGEL = true;
+function migreerDag78(rec) {
+  if (!rec || typeof rec !== 'object') return rec;
+  const heeftNieuw = Array.isArray(rec.dag7) || Array.isArray(rec.dag8);
+  if (Array.isArray(rec.dag78) && !heeftNieuw) {
+    const d7 = [], d8 = [];
+    rec.dag78.forEach(p => {
+      if (!p || !p.src) return;
+      const dag = p.taken ? dayForDate(p.taken) : null;
+      (dag === 'dag8' ? d8 : d7).push(p);
+    });
+    delete rec.dag78;
+    rec.dag7 = d7; rec.dag8 = d8;
+    if (DAG78_SPIEGEL) rec.dag78 = d7.concat(d8);
+  } else if (!heeftNieuw && 'dag78' in rec) {
+    delete rec.dag78;
+  }
+  ['_handmatig', '_basisUit', '_dagTekst'].forEach(k => {
+    const o = rec[k];
+    if (!o || typeof o !== 'object' || !('dag78' in o)) return;
+    if (!('dag7' in o)) o.dag7 = o.dag78;
+    if (k !== '_dagTekst' && !('dag8' in o)) o.dag8 = o.dag78;
+    delete o.dag78;
+  });
+  return rec;
+}
+
 async function haalBin() {
   const r = await haalBinRuw();
   if (!r) return null;
@@ -3187,6 +3227,7 @@ async function haalBinRuw() {
   const samen = Object.assign({}, r1);
   delete samen.deel;
   if (bin2Gebruikt) BIN2_DAGEN.forEach(k => { samen[k] = Array.isArray(r2[k]) ? r2[k] : []; });
+  migreerDag78(samen);
   // Zolang bin 2 nog leeg is, staan Zanzibar-foto's (als die er zijn) nog in bin 1:
   // die worden bij de eerstvolgende keer opslaan vanzelf naar bin 2 verhuisd.
   const delen = splitsRecord(samen);
@@ -3217,7 +3258,7 @@ function basisRecord() {
 // volgorde met onze nieuwe foto's ertussen. Lokale foto-objecten blijven
 // dezelfde objecten, zodat verwijzingen (verhaal-wachtrij) blijven kloppen.
 function samenvoegRecords(basis, online, lokaal) {
-  basis = basis || {}; online = online || {}; lokaal = lokaal || {};
+  basis = migreerDag78(basis || {}); online = migreerDag78(online || {}); lokaal = migreerDag78(lokaal || {});
   const uit = {};
   const tekst = v => binTekst(v === undefined ? null : v);
   DAYS.forEach(d => {
@@ -3274,6 +3315,7 @@ function samenvoegRecords(basis, online, lokaal) {
 }
 
 function pasSamengevoegdToe(rec) {
+  migreerDag78(rec);
   handmatig = (rec._handmatig && typeof rec._handmatig === 'object') ? rec._handmatig : {};
   spots = (rec._spots && typeof rec._spots === 'object') ? rec._spots : {};
   verborgenBasis = (rec._basisUit && typeof rec._basisUit === 'object') ? rec._basisUit : {};
@@ -3361,6 +3403,7 @@ function toonLeesfout(aan) {
 }
 
 function applyRecord(record) {
+  migreerDag78(record);
   handmatig = (record._handmatig && typeof record._handmatig === 'object') ? record._handmatig : {};
   noodInfo = (record._nood && typeof record._nood === 'object') ? record._nood : {};
   if (typeof renderNood === 'function') renderNood();
@@ -3403,6 +3446,7 @@ function buildRecord() {
   record._dagTekst = dagTekst;
   if (koers) record._koers = koers;
   if (paklijst) record._paklijst = paklijst;
+  if (DAG78_SPIEGEL) record.dag78 = (photos.dag7 || []).concat(photos.dag8 || []);
   return record;
 }
 
@@ -3499,7 +3543,7 @@ async function bewaarKern() {
 const UPLOAD_GROUPS = [
   {ids:["dag1","dag2","dag3","dag4"], label:"Arusha",      emoji:"🌿", days:"Dag 1–4"},
   {ids:["dag5"],                      label:"Tarangire",   emoji:"🐘", days:"Dag 5"},
-  {ids:["dag6","dag78"],              label:"Serengeti",   emoji:"🦁", days:"Dag 6–8"},
+  {ids:["dag6","dag7","dag8"],        label:"Serengeti",   emoji:"🦁", days:"Dag 6–8"},
   {ids:["dag9"],                      label:"Ngorongoro",  emoji:"🦏", days:"Dag 9"},
   {ids:["dag10","dag1117","dag18"],   label:"Zanzibar",    emoji:"🏖️", days:"Dag 10–17"},
 ];
@@ -3535,7 +3579,8 @@ const DAY_DATES = {
   dag1:   ['2026-10-16','2026-10-16'], dag2:   ['2026-10-17','2026-10-17'],
   dag3:   ['2026-10-18','2026-10-18'], dag4:   ['2026-10-19','2026-10-19'],
   dag5:   ['2026-10-20','2026-10-20'], dag6:   ['2026-10-21','2026-10-21'],
-  dag78:  ['2026-10-22','2026-10-23'], dag9:   ['2026-10-24','2026-10-24'],
+  dag7:   ['2026-10-22','2026-10-22'], dag8:   ['2026-10-23','2026-10-23'],
+  dag9:   ['2026-10-24','2026-10-24'],
   dag10:  ['2026-10-25','2026-10-25'], dag1117:['2026-10-26','2026-11-01'],
   dag18:  ['2026-11-02','2026-11-02']
 };
@@ -3694,7 +3739,7 @@ function tzTijd() {
 const WEER_PLEK = {
   dag1:[-3.37,36.68,'Arusha'], dag2:[-3.37,36.68,'Arusha'], dag3:[-3.25,36.85,'Arusha NP'],
   dag4:[-3.37,36.68,'Arusha'], dag5:[-4.00,36.03,'Tarangire'], dag6:[-2.33,34.83,'Serengeti'],
-  dag78:[-2.33,34.83,'Serengeti'], dag9:[-3.17,35.58,'Ngorongoro'], dag10:[-6.16,39.19,'Zanzibar'],
+  dag7:[-2.33,34.83,'Serengeti'], dag8:[-2.33,34.83,'Serengeti'], dag9:[-3.17,35.58,'Ngorongoro'], dag10:[-6.16,39.19,'Zanzibar'],
   dag1117:[-6.31,39.54,'Zanzibar'], dag18:[-6.82,39.28,'Dar es Salaam']
 };
 const WEER_CODES = {
@@ -4144,6 +4189,7 @@ function wachtrijHerstel() {
   const rest = [];
   const geraakt = new Set();
   a.forEach(x => {
+    if (x && x.id === 'dag78' && x.rec) x.id = (x.rec.taken && dayForDate(x.rec.taken) === 'dag8') ? 'dag8' : 'dag7';
     if (!x || !x.rec || !x.rec.src || !DAYS.some(d => d.id === x.id)) return;
     if (!photos[x.id]) photos[x.id] = [];
     if (photos[x.id].some(p => p.src === x.rec.src)) return;   // staat er al: bewaard
@@ -5946,7 +5992,8 @@ const VERBLIJF_PER_DAG = {
   dag4:    [{s:"ilboru",  n:"nacht 4 van 4",     d:"19 okt"}],
   dag5:    [{s:"foot",    n:"1 nacht",           d:"20 okt"}],
   dag6:    [{s:"mgunga",  n:"nacht 1 van 3",     d:"21 okt"}],
-  dag78:   [{s:"mgunga",  n:"nacht 2 en 3 van 3",d:"22–23 okt"}],
+  dag7:    [{s:"mgunga",  n:"nacht 2 van 3",     d:"22 okt"}],
+  dag8:    [{s:"mgunga",  n:"nacht 3 van 3",     d:"23 okt"}],
   dag9:    [{s:"manyara", n:"1 nacht",           d:"24 okt"}],
   dag10:   [{s:"ss",      n:"nacht 1 van 7",     d:"25 okt"}],
   dag1117: [{s:"ss",      n:"nacht 2 t/m 7",     d:"26–31 okt"},
@@ -7678,10 +7725,11 @@ var _dagLinkGedaan = false;
 function openDagFromHash() {
   const m = /^#d=([A-Za-z0-9]+)$/.exec(location.hash || '');
   if (!m || _dagLinkGedaan) return false;
-  if (!DAYS.some(d => d.id === m[1])) return false;
+  const id = m[1] === 'dag78' ? 'dag7' : m[1];   // oude links van vóór de splitsing
+  if (!DAYS.some(d => d.id === id)) return false;
   _dagLinkGedaan = true;
   toonTab('route', true);
-  setTimeout(() => springNaarDag(m[1]), 350);
+  setTimeout(() => springNaarDag(id), 350);
   return true;
 }
 
@@ -9758,6 +9806,7 @@ async function importData(ev) {
     const tekst = await file.text();
     const record = JSON.parse(tekst);
     if (!record || typeof record !== 'object') throw new Error('vorm');
+    migreerDag78(record);
     DAYS.forEach(d => { photos[d.id] = Array.isArray(record[d.id]) ? record[d.id] : []; });
     spots = (record._spots && typeof record._spots === 'object') ? record._spots : {};
     handmatig = (record._handmatig && typeof record._handmatig === 'object') ? record._handmatig : {};
@@ -9774,6 +9823,7 @@ function lokaleKopie() {
     const raw = localStorage.getItem('tz_kopie');
     if (!raw) return null;
     const o = JSON.parse(raw);
+    if (o && o.record) migreerDag78(o.record);
     return (o && o.record) ? o : null;
   } catch(e) { return null; }
 }
@@ -9829,10 +9879,11 @@ function openFromHash() {
   if (openDagFromHash()) return;
   const m = /^#f=([A-Za-z0-9]+)-(\d+)$/.exec(location.hash || '');
   if (!m) return;
-  const lijst = _slides[m[1]];
+  const id = m[1] === 'dag78' ? 'dag7' : m[1];   // oude links van vóór de splitsing
+  const lijst = _slides[id];
   if (!lijst || !lijst.length) return;
   toonTab('album', true);
-  setTimeout(() => openLightbox(m[1], Math.min(+m[2], lijst.length - 1)), 250);
+  setTimeout(() => openLightbox(id, Math.min(+m[2], lijst.length - 1)), 250);
 }
 
 // ══════════ TABBLADEN ══════════
