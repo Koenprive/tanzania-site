@@ -2531,7 +2531,7 @@ body.sleepbezig{-webkit-user-select:none;user-select:none;cursor:grabbing;}
     <div class="sec-head reveal">
       <p class="sec-label">Het complete fotoalbum</p>
       <h2 class="sec-title">Alles bij elkaar,<br>overnachting na overnachting</h2>
-      <p class="sec-sub">Alle foto&#39;s van de reis als een album om doorheen te scrollen. Elke nieuwe overnachtingsplek begint op een nieuwe pagina. Tik op een foto om hem groot te zien, bewaar het hele album als PDF of download alle foto&#39;s in volle grootte als zip.</p>
+      <p class="sec-sub">Alle foto&#39;s van de reis als een album om doorheen te scrollen. Tik op een foto om hem groot te zien. <strong>Heel album als PDF</strong> maakt er een echt fotoboek van: per bestemming een hoofdstuk met de kaart en de overnachting, per dag de beschrijving, een tijdbalkje en de foto&#39;s met jullie verhalen &mdash; hoogtepunten en foto&#39;s met duimpjes staan groot. Of download alle foto&#39;s in volle grootte als zip.</p>
     </div>
     <div class="boek-balk reveal">
       <span class="boek-info" id="boekInfo"></span>
@@ -3020,7 +3020,7 @@ body.sleepbezig{-webkit-user-select:none;user-select:none;cursor:grabbing;}
     <button class="vb-sluit" onclick="sluitOmslag()" aria-label="Sluiten"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
     <div class="om-kop">
       <p class="cg-titel" id="omslagTitel">Welke foto komt op de omslag?</p>
-      <p class="cg-hint">De foto staat bovenaan de omslag, boven het woord <em>Fotoalbum</em>. Favorieten (&#9733;) staan vooraan.</p>
+      <p class="cg-hint">De foto staat bovenaan de omslag, boven het woord <em>Fotoalbum</em>. Favorieten (&#9733;) staan vooraan. Het album krijgt per bestemming een hoofdstukpagina met de overnachting en per dag de beschrijving, een tijdbalkje en de foto&#39;s met jullie verhalen; hoogtepunten en foto&#39;s met duimpjes staan groot.</p>
     </div>
     <div class="om-inhoud">
       <div class="om-voorbeeld" id="omslagVoorbeeld" aria-hidden="true">
@@ -3033,13 +3033,13 @@ body.sleepbezig{-webkit-user-select:none;user-select:none;cursor:grabbing;}
       <div class="om-optie"><span>Kwaliteit</span>
         <div class="om-keuze" id="pdfDpi" role="radiogroup" aria-label="Kwaliteit van de PDF">
           <button type="button" data-v="150" onclick="pdfOptie('dpi',150)">Om te delen<small>150 dpi &middot; klein bestand</small></button>
-          <button type="button" data-v="300" onclick="pdfOptie('dpi',300)">Om af te drukken<small>300 dpi &middot; scherp, &plusmn;4&times; groter</small></button>
+          <button type="button" data-v="300" onclick="pdfOptie('dpi',300)">Om af te drukken<small>300 dpi &middot; scherp, &plusmn;3&times; groter (bij honderden foto&#39;s een groot bestand)</small></button>
         </div>
       </div>
-      <div class="om-optie"><span>Per pagina</span>
-        <div class="om-keuze" id="pdfMax" role="radiogroup" aria-label="Foto&#39;s per pagina">
-          <button type="button" data-v="16" onclick="pdfOptie('max',16)">Tot 16 foto&#39;s<small>compact</small></button>
-          <button type="button" data-v="8" onclick="pdfOptie('max',8)">Tot 8 foto&#39;s<small>grotere foto&#39;s, meer pagina&#39;s</small></button>
+      <div class="om-optie"><span>Opmaak</span>
+        <div class="om-keuze" id="pdfMax" role="radiogroup" aria-label="Opmaak van de fotopagina&#39;s">
+          <button type="button" data-v="16" onclick="pdfOptie('max',16)">Compact<small>4 foto&#39;s per rij</small></button>
+          <button type="button" data-v="8" onclick="pdfOptie('max',8)">Ruim<small>3 foto&#39;s per rij, meer pagina&#39;s</small></button>
         </div>
       </div>
     </div>
@@ -8597,7 +8597,7 @@ function pdfOptiesToon() {
   });
 }
 function pdfSchaal() { return pdfOpties().dpi / 150; }
-function pdfKwaliteit() { return pdfOpties().dpi === 300 ? 0.92 : 0.86; }
+function pdfKwaliteit() { return pdfOpties().dpi === 300 ? 0.88 : 0.86; }
 function pdfCanvas() {
   const s = pdfSchaal();
   const c = document.createElement('canvas');
@@ -8639,66 +8639,14 @@ async function tekenOmslagPdf(tot, plekken, foto) {
   ctx.fillText('Tanzania &', PM - 6, 1270); ctx.fillText('Zanzibar', PM - 6, 1420);
   ctx.fillStyle = 'rgba(255,255,255,.8)'; ctx.font = '400 36px Inter, system-ui, sans-serif';
   ctx.fillText('16 oktober – 2 november 2026', PM, 1500);
-  ctx.fillText(tot + ' foto' + (tot === 1 ? '' : "'s") + ' · ' + plekken + ' overnachtingsplek' + (plekken === 1 ? '' : 'ken'), PM, 1552);
+  ctx.fillText(tot + ' foto' + (tot === 1 ? '' : "'s") + ' · 18 dagen · ' + plekken + ' bestemming' + (plekken === 1 ? '' : 'en'), PM, 1552);
   ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(PM, 1610, PB - 2 * PM, 1);
   ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.font = '500 24px Inter, system-ui, sans-serif';
   ctx.fillText('N I E N K E   ·   M A A R T E N   ·   E S T H E R   ·   K O E N', PM, 1660);
   return c;
 }
 
-async function tekenBladPdf(b, nr, totaal, melden) {
-  const [c, ctx] = pdfCanvas();
-  const gw = PB - 2 * PM;
-  ctx.fillStyle = '#FFFDF9'; ctx.fillRect(0, 0, PB, PH);
-  ctx.textBaseline = 'alphabetic';
-  // kop
-  ctx.fillStyle = '#B4622D'; ctx.fillRect(PM, 118, 44, 3);
-  ctx.font = '600 20px Inter, system-ui, sans-serif';
-  ctx.fillText(b.kop.oog.toUpperCase().split('').join(' '), PM + 60, 126);
-  let tekstBreed = gw;
-  if (b.kop.lodge && b.deel === 0) {
-    const im = await cgLaad(vbMini(b.kop.lodge, 0));
-    if (im) {
-      const r = 64, cx = PB - PM - r, cy = 190;
-      ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, r + 5, 0, Math.PI * 2); ctx.fillStyle = '#FFFFFF'; ctx.fill(); ctx.restore();
-      try { cgCover(ctx, im, cx - r, cy - r, 2 * r, 2 * r, r); } catch (e) {}
-      im.src = '';
-      tekstBreed = gw - 2 * r - 30;
-    }
-  }
-  ctx.fillStyle = '#191512'; ctx.font = '400 66px Fraunces, Georgia, serif';
-  ctx.fillText(pdfTekstKort(ctx, b.kop.titel + (b.deel > 0 ? ' (vervolg)' : ''), tekstBreed), PM - 3, 204);
-  ctx.fillStyle = '#807668'; ctx.font = '400 24px Inter, system-ui, sans-serif';
-  ctx.fillText(pdfTekstKort(ctx, b.kop.meta + ' · ' + b.fotos.length + ' foto' + (b.fotos.length === 1 ? '' : "'s"), tekstBreed), PM, 246);
-  ctx.fillStyle = '#E8E2D7'; ctx.fillRect(PM, 280, gw, 2);
-  // foto's
-  const top = 316, onder = PH - 120, gap = 10;
-  const [cols, rows] = boekRaster(b.fotos.length);
-  const ch = (onder - top - gap * (rows - 1)) / rows;
-  for (let i = 0; i < b.fotos.length; i++) {
-    const rij = Math.floor(i / cols);
-    const inRij = (rij === rows - 1) ? (b.fotos.length - rij * cols) : cols;
-    const cw = (gw - gap * (inRij - 1)) / inRij;
-    const x = PM + (i - rij * cols) * (cw + gap), y = top + rij * (ch + gap);
-    ctx.fillStyle = '#EFE9DF'; ctx.fillRect(x, y, cw, ch);
-    const im = await cgLaad(b.fotos[i].p.src);
-    if (im) { cgCover(ctx, im, x, y, cw, ch, 3); im.src = ''; }
-    if (melden) melden();
-  }
-  // voet
-  ctx.fillStyle = '#E8E2D7'; ctx.fillRect(PM, PH - 92, gw, 1);
-  ctx.fillStyle = '#807668'; ctx.font = '400 20px Inter, system-ui, sans-serif';
-  ctx.fillText('Tanzania & Zanzibar 2026', PM, PH - 56);
-  const t = nr + ' / ' + totaal; ctx.fillText(t, PB - PM - ctx.measureText(t).width, PH - 56);
-  return c;
-}
-
-// ── Programma-pagina's in de PDF ──
-// Vóór de foto's van elke overnachtingsplek komt een tekstpagina met, dag voor
-// dag, de titel, de plek en de (eventueel zelf aangepaste) beschrijving van de
-// dagen waarvan er foto's in dat hoofdstuk staan. Een dag staat maar één keer
-// (dag 11–17 valt bij twee verblijven). Past het niet op één pagina, dan loopt
-// het door op een vervolgpagina.
+// tekst in regels afbreken op een maximale breedte (ctx.font moet al gezet zijn)
 function pdfRegels(ctx, tekst, maxB) {
   const uit = [];
   String(tekst || '').split('\n').forEach(alinea => {
@@ -8713,86 +8661,6 @@ function pdfRegels(ctx, tekst, maxB) {
   });
   while (uit.length && uit[uit.length - 1] === '') uit.pop();
   return uit;
-}
-
-function pdfPaginasMetTekst(max) {
-  const pag = boekPaginas(max), uit = [], gedaan = {};
-  let vorige = null;
-  pag.forEach(b => {
-    if (b.h !== vorige) {
-      vorige = b.h;
-      const dagen = [];
-      b.h.fotos.forEach(f => { if (!gedaan[f.dayId]) { gedaan[f.dayId] = true; dagen.push(DAYS.find(d => d.id === f.dayId)); } });
-      if (dagen.length) uit.push({tekst: true, h: b.h, kop: b.kop, dagen: dagen.filter(Boolean)});
-    }
-    uit.push(b);
-  });
-  return uit;
-}
-
-// Tekent de programma-pagina('s) van één hoofdstuk; geeft een lijst canvassen.
-async function tekenTekstPdf(b, nrStart, totaalFn) {
-  const gw = PB - 2 * PM, onder = PH - 120, REGEL = 34;
-  const meet = document.createElement('canvas').getContext('2d');
-  meet.font = '400 23px Inter, system-ui, sans-serif';
-  // blokken: per dag kop + regels (hoogte vooraf, zodat we netjes kunnen afbreken)
-  const blokken = b.dagen.map(d => {
-    const regels = pdfRegels(meet, dagBeschrijving(d.id), gw);
-    return {d: d, regels: regels, hoogte: 118 + regels.length * REGEL};
-  });
-  const canvassen = [];
-  let i = 0, deel = 0;
-  while (i < blokken.length) {
-    const [c, ctx] = pdfCanvas();
-    ctx.fillStyle = '#FFFDF9'; ctx.fillRect(0, 0, PB, PH);
-    ctx.textBaseline = 'alphabetic';
-    ctx.fillStyle = '#B4622D'; ctx.fillRect(PM, 118, 44, 3);
-    ctx.font = '600 20px Inter, system-ui, sans-serif';
-    ctx.fillText('D A G   V O O R   D A G', PM + 60, 126);
-    let tekstBreed = gw;
-    if (b.kop.lodge && deel === 0) {
-      const im = await cgLaad(vbMini(b.kop.lodge, 0));
-      if (im) {
-        const r = 64, cx = PB - PM - r, cy = 190;
-        ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, r + 5, 0, Math.PI * 2); ctx.fillStyle = '#FFFFFF'; ctx.fill(); ctx.restore();
-        try { cgCover(ctx, im, cx - r, cy - r, 2 * r, 2 * r, r); } catch (e) {}
-        im.src = '';
-        tekstBreed = gw - 2 * r - 30;
-      }
-    }
-    ctx.fillStyle = '#191512'; ctx.font = '400 66px Fraunces, Georgia, serif';
-    ctx.fillText(pdfTekstKort(ctx, b.kop.titel + (deel > 0 ? ' (vervolg)' : ''), tekstBreed), PM - 3, 204);
-    ctx.fillStyle = '#807668'; ctx.font = '400 24px Inter, system-ui, sans-serif';
-    ctx.fillText(pdfTekstKort(ctx, b.kop.meta, tekstBreed), PM, 246);
-    ctx.fillStyle = '#E8E2D7'; ctx.fillRect(PM, 280, gw, 2);
-    let y = 350, eerst = true;
-    while (i < blokken.length && (eerst || y + blokken[i].hoogte <= onder)) {
-      const bl = blokken[i], d = bl.d;
-      // streepje + dagbadge + datum
-      ctx.fillStyle = '#B4622D'; ctx.font = '600 19px Inter, system-ui, sans-serif';
-      ctx.fillText((d.days + '  ·  ' + d.date).toUpperCase().split('').join(' '), PM, y);
-      ctx.fillStyle = '#191512'; ctx.font = '400 40px Fraunces, Georgia, serif';
-      ctx.fillText(pdfTekstKort(ctx, d.title, gw), PM - 1, y + 48);
-      ctx.fillStyle = '#807668'; ctx.font = '400 21px Inter, system-ui, sans-serif';
-      ctx.fillText(pdfTekstKort(ctx, d.loc, gw), PM, y + 82);
-      ctx.fillStyle = '#3F362E'; ctx.font = '400 23px Inter, system-ui, sans-serif';
-      let ry = y + 122;
-      for (let k = 0; k < bl.regels.length; k++) {
-        if (ry > onder) break;   // een extreem lange tekst: afkappen in plaats van doorlopen
-        ctx.fillText(bl.regels[k], PM, ry); ry += REGEL;
-      }
-      y += bl.hoogte + 40;
-      i++; eerst = false;
-    }
-    // voet
-    ctx.fillStyle = '#E8E2D7'; ctx.fillRect(PM, PH - 92, gw, 1);
-    ctx.fillStyle = '#807668'; ctx.font = '400 20px Inter, system-ui, sans-serif';
-    ctx.fillText('Tanzania & Zanzibar 2026', PM, PH - 56);
-    const t = (nrStart + canvassen.length) + ' / ' + totaalFn(); ctx.fillText(t, PB - PM - ctx.measureText(t).width, PH - 56);
-    canvassen.push(c);
-    deel++;
-  }
-  return canvassen;
 }
 
 // ── Omslagfoto kiezen vóór het maken van de PDF ──
@@ -8886,12 +8754,594 @@ document.addEventListener('click', e => {
   if (e.target && e.target.id === 'omslagModal') sluitOmslag();
 });
 
+// ══════════ HET ALBUM ALS PDF — opmaak ══════════
+// Opbouw: omslag · overzicht met kaart · per bestemming een hoofdstukpagina
+// (grote foto, kaart, overnachting) · per dag een kop met de beschrijving en
+// daarna de foto's, met de verhalen als bijschrift; hoogtepunten (★) en foto's
+// met duimpjes krijgen een groot vlak · meest geliefde foto's · slotpagina met
+// de reis in cijfers, de spotlijst en een QR-code.
+const PDF_K = {ink: '#191512', ink2: '#3F362E', muted: '#807668', accent: '#B4622D', ocean: '#2A7B86',
+               line: '#E8E2D7', paper: '#FFFDF9', surf: '#F4EFE7', donker: '#2A2119'};
+const PDF_SANS = 'Inter, system-ui, sans-serif', PDF_SERIF = 'Fraunces, Georgia, serif';
+function pf(gewicht, px, serif, ital) { return (ital ? 'italic ' : '') + gewicht + ' ' + px + 'px ' + (serif ? PDF_SERIF : PDF_SANS); }
+function pdfSpatie(t) { return String(t || '').toUpperCase().split('').join(' '); }
+
+// Tekst met regelafbreking; y is de basislijn van de eerste regel. Geeft het aantal regels.
+function pdfTekst(ctx, tekst, x, y, maxB, regelH, maxRegels, font, kleur) {
+  ctx.font = font; ctx.fillStyle = kleur;
+  let regels = pdfRegels(ctx, tekst, maxB);
+  if (maxRegels && regels.length > maxRegels) {
+    regels = regels.slice(0, maxRegels);
+    regels[maxRegels - 1] = pdfTekstKort(ctx, regels[maxRegels - 1] + ' …', maxB);
+  }
+  regels.forEach((r, i) => ctx.fillText(r, x, y + i * regelH));
+  return regels.length;
+}
+function pdfTekstRegels(ctx, tekst, maxB, font) { ctx.font = font; return pdfRegels(ctx, tekst, maxB).length; }
+
+// Lijn-icoon uit een SVG-string (alleen <path d> en <circle>), op een 24-raster.
+function pdfIcoon(ctx, svg, x, y, maat, kleur, vul) {
+  const s = maat / 24;
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  ctx.lineWidth = 1.9; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.strokeStyle = kleur; ctx.fillStyle = kleur;
+  let m; const re = /<path d="([^"]+)"/g;
+  while ((m = re.exec(svg))) { const p = new Path2D(m[1]); if (vul) ctx.fill(p); else ctx.stroke(p); }
+  const rc = /<circle cx="([\d.]+)" cy="([\d.]+)" r="([\d.]+)"/g;
+  while ((m = rc.exec(svg))) { ctx.beginPath(); ctx.arc(+m[1], +m[2], +m[3], 0, Math.PI * 2); if (vul) ctx.fill(); else ctx.stroke(); }
+  ctx.restore();
+}
+const PDF_DUIM = '<path d="M7 10v11H3V10h4zm2.2 0l3.6-7.6A2 2 0 0 1 16 4v6h4.2a2 2 0 0 1 2 2.3l-1.3 7a2 2 0 0 1-2 1.7H9.2z"/>';
+const PDF_STER = '<path d="M12 2.6l2.9 6 6.6.9-4.8 4.6 1.2 6.6L12 17.6l-5.9 3.1 1.2-6.6L2.5 9.5l6.6-.9z"/>';
+
+function pdfPil(ctx, x, y, tekst, icoon, bg, kleur, maat) {
+  maat = maat || 20;
+  ctx.font = pf(600, maat * .8);
+  const tb = tekst ? ctx.measureText(tekst).width : 0, pad = maat * .55, ih = icoon ? maat * .85 : 0;
+  const w = pad * 2 + ih + (tekst ? tb + (icoon ? maat * .35 : 0) : 0), h = maat * 1.5;
+  ctx.fillStyle = bg;
+  ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, y, w, h, h / 2); else ctx.rect(x, y, w, h); ctx.fill();
+  let tx = x + pad;
+  if (icoon) { pdfIcoon(ctx, icoon, tx, y + (h - ih) / 2, ih, kleur, true); tx += ih + maat * .35; }
+  if (tekst) { ctx.fillStyle = kleur; ctx.textBaseline = 'middle'; ctx.fillText(tekst, tx, y + h / 2 + 1); ctx.textBaseline = 'alphabetic'; }
+  return w;
+}
+
+function pdfDuim(f) { const n = _duimStand[duimSleutel(f.p.src)]; return (typeof n === 'number' && n > 0) ? n : 0; }
+
+function pdfDatumLang(id) {
+  const r = DAY_DATES[id]; if (!r) return '';
+  try {
+    const a = new Date(r[0] + 'T12:00:00'), b = new Date(r[1] + 'T12:00:00');
+    const f = (d, o) => d.toLocaleDateString('nl-NL', o);
+    if (r[0] === r[1]) return f(a, {weekday: 'long', day: 'numeric', month: 'long'});
+    return f(a, {day: 'numeric', month: (a.getMonth() === b.getMonth() ? undefined : 'long')}) + ' t/m ' + f(b, {day: 'numeric', month: 'long'});
+  } catch (e) { return r[0]; }
+}
+function pdfPeriode(ids) {
+  const r0 = DAY_DATES[ids[0]], r1 = DAY_DATES[ids[ids.length - 1]];
+  if (!r0 || !r1) return '';
+  try {
+    const a = new Date(r0[0] + 'T12:00:00'), b = new Date(r1[1] + 'T12:00:00');
+    const f = (d, o) => d.toLocaleDateString('nl-NL', o);
+    if (r0[0] === r1[1]) return f(a, {day: 'numeric', month: 'long', year: 'numeric'});
+    return f(a, {day: 'numeric', month: (a.getMonth() === b.getMonth() ? undefined : 'long')}) + ' t/m ' + f(b, {day: 'numeric', month: 'long', year: 'numeric'});
+  } catch (e) { return ''; }
+}
+
+// ── de kaart als afbeelding (uit de SVG op de pagina) ──
+var _pdfKaartImg = null;
+async function pdfKaartImg() {
+  if (_pdfKaartImg) return _pdfKaartImg;
+  const svg = document.querySelector('.tzmap');
+  if (!svg) return null;
+  const kl = svg.cloneNode(true);
+  kl.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+  kl.setAttribute('width', '1526'); kl.setAttribute('height', '1414');
+  const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(kl)], {type: 'image/svg+xml;charset=utf-8'}));
+  const im = await cgLaad(url);
+  URL.revokeObjectURL(url);
+  _pdfKaartImg = im;
+  return im;
+}
+function pdfPins() {
+  return [].slice.call(document.querySelectorAll('.map-stage .pin[data-groep]')).map(p => {
+    const gi = UPLOAD_GROUPS.findIndex(g => g.label.toLowerCase() === p.dataset.groep);
+    return {groep: p.dataset.groep, gi: gi, x: parseFloat(p.style.left) / 100, y: parseFloat(p.style.top) / 100,
+            naam: (p.querySelector('.pin-name') || {}).textContent || '', dag: (p.querySelector('.pin-day') || {}).textContent || '',
+            zee: p.classList.contains('ocean'), zijde: p.classList.contains('left') ? 'links' : p.classList.contains('right') ? 'rechts' : 'onder'};
+  });
+}
+// Tekent de kaart met de bestemmingen. opties: {actief: 'arusha', labels: true, nummers: true, klein: true}
+async function pdfKaart(ctx, x, y, w, opties) {
+  opties = opties || {};
+  const h = w * 707 / 763;
+  const im = await pdfKaartImg();
+  if (im) ctx.drawImage(im, x, y, w, h);
+  else { ctx.fillStyle = PDF_K.surf; ctx.fillRect(x, y, w, h); }
+  const r = opties.klein ? 11 : 17, fs = opties.klein ? 15 : 22;
+  pdfPins().forEach(pin => {
+    const cx = x + pin.x * w, cy = y + pin.y * h;
+    const actief = !opties.actief || opties.actief === pin.groep;
+    const kleur = pin.zee ? PDF_K.ocean : PDF_K.accent;
+    if (opties.actief === pin.groep) {
+      ctx.strokeStyle = kleur; ctx.lineWidth = 2; ctx.globalAlpha = .35;
+      ctx.beginPath(); ctx.arc(cx, cy, r * 2.2, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1;
+    }
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = actief ? kleur : '#C9BFAE'; ctx.fill();
+    ctx.lineWidth = opties.klein ? 2.5 : 3.5; ctx.strokeStyle = '#FFFFFF'; ctx.stroke();
+    if (opties.nummers && pin.gi >= 0) {
+      ctx.fillStyle = '#FFFFFF'; ctx.font = pf(700, r * 1.15); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(String(pin.gi + 1), cx, cy + 1); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    }
+    if (opties.labels) {
+      ctx.font = pf(600, fs); ctx.fillStyle = actief ? PDF_K.ink : '#A79B89';
+      const tb = ctx.measureText(pin.naam).width;
+      let tx = cx - tb / 2, ty = cy + r + fs + 4;
+      if (pin.zijde === 'links') { tx = cx - r - 10 - tb; ty = cy + fs * .36; }
+      if (pin.zijde === 'rechts') { tx = cx + r + 10; ty = cy + fs * .36; }
+      ctx.save(); ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineJoin = 'round'; ctx.strokeText(pin.naam, tx, ty); ctx.restore();
+      ctx.fillText(pin.naam, tx, ty);
+    }
+  });
+  return h;
+}
+
+function pdfVoet(ctx, nr, tot, links) {
+  const gw = PB - 2 * PM;
+  ctx.fillStyle = PDF_K.line; ctx.fillRect(PM, PH - 92, gw, 1);
+  ctx.fillStyle = PDF_K.muted; ctx.font = pf(400, 19);
+  ctx.fillText(links || 'Tanzania & Zanzibar 2026', PM, PH - 56);
+  const t = nr + ' / ' + tot; ctx.fillText(t, PB - PM - ctx.measureText(t).width, PH - 56);
+}
+function pdfEyebrow(ctx, tekst, x, y, kleur) {
+  ctx.fillStyle = kleur || PDF_K.accent; ctx.fillRect(x, y - 8, 44, 3);
+  ctx.font = pf(600, 19); ctx.fillText(pdfSpatie(tekst), x + 60, y);
+}
+function pdfFoto(ctx, im, x, y, w, h, straal) {
+  ctx.fillStyle = '#EFE9DF';
+  ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, y, w, h, straal || 0); else ctx.rect(x, y, w, h); ctx.fill();
+  if (im) { try { cgCover(ctx, im, x, y, w, h, straal || 0); } catch (e) {} }
+}
+
+
+// ── tijdbalkjes ──
+// De reis als balk: elke reisdag een vakje (dag 11–17 is zeven vakjes), tot en met vandaag
+// gekleurd, de dag van deze pagina gemarkeerd, de bestemmingen eronder.
+function pdfReisBalk(ctx, x, y, w, dagId, kleur) {
+  const dagen = DAYS.map(d => {
+    const r = DAY_DATES[d.id]; let n = 1;
+    if (r) n = Math.max(1, Math.round((Date.parse(r[1]) - Date.parse(r[0])) / 864e5) + 1);
+    return {d: d, n: n};
+  });
+  const tot = dagen.reduce((s, q) => s + q.n, 0), per = w / tot, gap = 3;
+  let cx = x, huidig = null, voorbij = true;
+  dagen.forEach(q => {
+    const bw = q.n * per - gap;
+    if (q.d.id === dagId) { voorbij = false; huidig = {x: cx, w: bw}; }
+    ctx.fillStyle = voorbij ? kleur : (q.d.id === dagId ? kleur : PDF_K.line);
+    ctx.globalAlpha = (voorbij && q.d.id !== dagId) ? .45 : 1;
+    ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(cx, y, Math.max(2, bw), 8, 4); else ctx.rect(cx, y, Math.max(2, bw), 8); ctx.fill();
+    ctx.globalAlpha = 1;
+    cx += q.n * per;
+  });
+  if (huidig) {
+    ctx.fillStyle = kleur; ctx.beginPath(); ctx.moveTo(huidig.x + huidig.w / 2, y - 4); ctx.lineTo(huidig.x + huidig.w / 2 - 6, y - 14); ctx.lineTo(huidig.x + huidig.w / 2 + 6, y - 14); ctx.fill();
+  }
+  // bestemmingen eronder, op de eerste dag van elke groep
+  ctx.font = pf(500, 13); ctx.fillStyle = PDF_K.muted;
+  let px = x;
+  UPLOAD_GROUPS.forEach((g, i) => {
+    const n = g.ids.reduce((s, id) => s + ((dagen.find(q => q.d.id === id) || {}).n || 0), 0);
+    const t = g.label, tb = ctx.measureText(t).width, bw = n * per;
+    if (tb < bw - 6 || i === UPLOAD_GROUPS.length - 1) ctx.fillText(t, Math.min(px, x + w - tb), y + 30);
+    px += bw;
+  });
+  const idx = dagen.findIndex(q => q.d.id === dagId);
+  const t = 'Dag ' + (idx >= 0 ? (dagen.slice(0, idx).reduce((s, q) => s + q.n, 0) + 1) : '?') + ' van ' + tot;
+  ctx.fillStyle = PDF_K.ink2; ctx.font = pf(600, 14);
+  ctx.fillText(t, x + w - ctx.measureText(t).width, y - 10);
+}
+
+// De dag als balk: van de eerste tot de laatste foto, met een stip per foto op de opnametijd.
+function pdfDagTijdbalk(ctx, x, y, w, fotos, kleur) {
+  const tijden = fotos.map(f => { const t = new Date(f.p.taken); return isNaN(t) ? null : {f: f, m: t.getHours() * 60 + t.getMinutes()}; }).filter(Boolean);
+  if (tijden.length < 2) return 0;
+  let van = Math.min(6 * 60, Math.min.apply(null, tijden.map(t => t.m))), tot = Math.max(21 * 60, Math.max.apply(null, tijden.map(t => t.m)));
+  van = Math.floor(van / 60) * 60; tot = Math.ceil(tot / 60) * 60;
+  const px = m => x + (m - van) / (tot - van) * w;
+  const ly = y + 30;
+  ctx.fillStyle = PDF_K.line; ctx.fillRect(x, ly, w, 2);
+  ctx.font = pf(400, 13); ctx.fillStyle = PDF_K.muted; ctx.textAlign = 'center';
+  for (let m = van; m <= tot; m += 60) {
+    const groot = (m / 60) % 3 === 0;
+    ctx.fillStyle = PDF_K.line; ctx.fillRect(px(m) - 1, ly - (groot ? 6 : 3), 2, groot ? 14 : 8);
+    if (groot) { ctx.fillStyle = PDF_K.muted; ctx.fillText(String(Math.floor(m / 60)).padStart(2, '0') + ':00', px(m), ly + 30); }
+  }
+  ctx.textAlign = 'left';
+  tijden.forEach(t => {
+    const cx = px(t.m), uit = t.f.uit;
+    ctx.beginPath(); ctx.arc(cx, ly + 1, uit ? 7 : 4.5, 0, Math.PI * 2);
+    ctx.fillStyle = kleur; ctx.globalAlpha = uit ? 1 : .55; ctx.fill(); ctx.globalAlpha = 1;
+    if (uit) { ctx.lineWidth = 2; ctx.strokeStyle = '#FFFFFF'; ctx.stroke(); }
+  });
+  const eerste = tijden.reduce((a, b) => a.m < b.m ? a : b), laatste = tijden.reduce((a, b) => a.m > b.m ? a : b);
+  const fm = m => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+  ctx.fillStyle = PDF_K.ink2; ctx.font = pf(500, 14);
+  ctx.fillText('Eerste foto ' + fm(eerste.m) + '  ·  laatste ' + fm(laatste.m), x, y + 8);
+  return 74;
+}
+
+// ── het plan: welke pagina's, en welke blokken op de dagpagina's ──
+function pdfVerblijven(ids) {
+  const uit = [];
+  ids.forEach(id => (VERBLIJF_PER_DAG[id] || []).forEach(v => { if (uit.indexOf(v.s) < 0 && STAYS[v.s]) uit.push(v.s); }));
+  return uit;
+}
+function albumPlan(opties) {
+  const meet = document.createElement('canvas').getContext('2d');
+  const gw = PB - 2 * PM;
+  const cols = opties.max === 8 ? 3 : 4, gap = 14;
+  const cw = (gw - gap * (cols - 1)) / cols, chh = Math.round(cw / 1.45);
+  const CAP = 24, UIT_H = 620, ONDER = PH - 130;
+  const pag = [{type: 'omslag'}, {type: 'overzicht'}];
+  const geliefd = [];
+  UPLOAD_GROUPS.forEach((g, gi) => {
+    const dagen = g.ids.map(id => DAYS.find(d => d.id === id)).filter(d => d && (photos[d.id] || []).length);
+    if (!dagen.length) return;
+    const alle = [];
+    dagen.forEach(d => (photos[d.id] || []).forEach((p, i) => alle.push({dayId: d.id, idx: i, p: p, day: d, duim: 0})));
+    alle.forEach(f => { f.duim = pdfDuim(f); });
+    const held = alle.slice().sort((a, b) => (b.duim - a.duim) || ((b.p.fav ? 1 : 0) - (a.p.fav ? 1 : 0)))[0];
+    pag.push({type: 'hoofdstuk', g: g, gi: gi, dagen: dagen, alle: alle, held: held, lodges: pdfVerblijven(g.ids)});
+    dagen.forEach(d => {
+      const fotos = alle.filter(f => f.dayId === d.id);
+      // uitgelicht: elk hoogtepunt (★), plus de drie foto's met de meeste duimpjes
+      const topDuim = fotos.filter(f => f.duim > 0 && !f.p.fav).sort((a, b) => b.duim - a.duim).slice(0, 3);
+      fotos.forEach(f => { f.uit = !!f.p.fav || topDuim.indexOf(f) >= 0; if (f.duim > 0) geliefd.push(f); });
+      const blokken = [];
+      let rij = null;
+      // de rij komt in de lijst zodra de eerste foto erin gaat (dus vóór een uitgelichte foto die erna komt)
+      const sluitRij = () => {
+        if (!rij) return;
+        const capL = Math.max.apply(null, rij.fotos.map(f => f.capRegels)), meta = rij.fotos.some(f => f.metaRegel);
+        rij.h = chh + ((capL || meta) ? 14 + (meta ? 22 : 0) + capL * CAP : 0); rij.meta = meta;
+        rij = null;
+      };
+      // Een uitgelichte foto onderbreekt de rij niet: de rij loopt erna gewoon vol
+      // (anders blijven er overal rijtjes van één foto over).
+      fotos.forEach(f => {
+        if (f.uit) { blokken.push({type: 'uit', f: f, h: UIT_H, min: 440}); return; }
+        f.capRegels = f.p.caption ? Math.min(3, pdfTekstRegels(meet, f.p.caption, cw, pf(400, 18))) : 0;
+        f.metaRegel = !!(f.p.taken || f.p.place);
+        if (!rij) { rij = {type: 'rij', fotos: [], h: chh, cw: cw, chh: chh, gap: gap, cols: cols, meta: false}; blokken.push(rij); }
+        rij.fotos.push(f);
+        if (rij.fotos.length === cols) sluitRij();
+      });
+      sluitRij();
+      // de kop van de dag: hoogte vooraf meten
+      const titelRegels = Math.min(2, pdfTekstRegels(meet, d.title, gw, pf(400, 60, true)));
+      const beschrRegels = pdfTekstRegels(meet, dagBeschrijving(d.id), gw, pf(400, 22));
+      const tijdbalk = fotos.filter(f => f.p.taken && !isNaN(Date.parse(f.p.taken))).length >= 2;
+      const kopH = 70 + 48 + titelRegels * 68 + 42 + 38 + 36 + 34 + beschrRegels * 34 + 44 + (tijdbalk ? 74 + 20 : 0);
+      let p = {type: 'dag', d: d, g: g, gi: gi, blokken: [], kop: true, kopH: kopH, fotos: fotos, tijdbalk: tijdbalk};
+      let y = 120 + kopH;
+      blokken.forEach(b => {
+        const rest = ONDER - y;
+        if (b.min && rest >= b.min && rest < b.h) b = Object.assign({}, b, {h: rest});   // uitgelichte foto past ingekort nog op deze pagina
+        if (y + b.h > ONDER && (p.blokken.length || p.kop)) {
+          pag.push(p); p = {type: 'dag', d: d, g: g, gi: gi, blokken: [], kop: false, fotos: fotos}; y = 236;
+        }
+        p.blokken.push(b); y += b.h + 24;
+      });
+      pag.push(p);
+    });
+  });
+  const top = geliefd.sort((a, b) => b.duim - a.duim).slice(0, 6);
+  if (top.length >= 3) pag.push({type: 'geliefd', fotos: top});
+  pag.push({type: 'slot'});
+  return pag;
+}
+
+// ── pagina's ──
+async function pdfOverzicht(ctx, nr, tot) {
+  const gw = PB - 2 * PM;
+  ctx.fillStyle = PDF_K.paper; ctx.fillRect(0, 0, PB, PH);
+  pdfEyebrow(ctx, 'De reis', PM, 126);
+  ctx.fillStyle = PDF_K.ink; ctx.font = pf(400, 64, true);
+  ctx.fillText('Van de Serengeti', PM - 3, 214); ctx.fillText('naar de Indische Oceaan', PM - 3, 286);
+  pdfTekst(ctx, 'Achttien dagen door het noorden van Tanzania — vier nationale parken, de Ngorongoro-krater en daarna acht dagen Zanzibar.', PM, 338, gw, 32, 3, pf(400, 22), PDF_K.muted);
+  const kh = await pdfKaart(ctx, PM, 400, gw, {labels: true, nummers: true});
+  // bestemmingen eronder
+  let y = 400 + kh + 54;
+  const c = reisCijfers();
+  const kol = gw / UPLOAD_GROUPS.length;
+  UPLOAD_GROUPS.forEach((g, i) => {
+    const x = PM + i * kol, n = g.ids.reduce((s, id) => s + (photos[id] || []).length, 0);
+    const zee = /zanzibar/i.test(g.label);
+    ctx.beginPath(); ctx.arc(x + 17, y, 17, 0, Math.PI * 2); ctx.fillStyle = '#FFFFFF'; ctx.fill();
+    ctx.lineWidth = 1.6; ctx.strokeStyle = zee ? PDF_K.ocean : PDF_K.accent; ctx.stroke();
+    ctx.fillStyle = zee ? PDF_K.ocean : PDF_K.accent; ctx.font = pf(600, 16); ctx.textAlign = 'center'; ctx.fillText(String(i + 1), x + 17, y + 6); ctx.textAlign = 'left';
+    ctx.fillStyle = PDF_K.ink; ctx.font = pf(600, 23); ctx.fillText(pdfTekstKort(ctx, g.label, kol - 50), x + 46, y + 8);
+    ctx.fillStyle = PDF_K.muted; ctx.font = pf(400, 17);
+    ctx.fillText(g.days + (n ? ' · ' + n + ' foto' + (n === 1 ? '' : '’s') : ''), x + 46, y + 34);
+  });
+  y += 96;
+  ctx.fillStyle = PDF_K.line; ctx.fillRect(PM, y, gw, 1);
+  y += 60;
+  const gespot = alleDieren().filter(d => spots[d.id]);
+  const big5 = DIEREN.filter(d => d.big5 && spots[d.id]).length;
+  const tegels = [[c.n, 'foto’s'], [c.dagen, 'dagen vastgelegd'], [gespot.length, 'dieren gespot'], [big5 + ' / 5', 'van de Big Five']];
+  const tw = gw / tegels.length;
+  tegels.forEach(([v, l], i) => {
+    const x = PM + i * tw;
+    ctx.fillStyle = PDF_K.ink; ctx.font = pf(400, 58, true); ctx.fillText(String(v), x, y + 40);
+    ctx.fillStyle = PDF_K.muted; ctx.font = pf(400, 18); ctx.fillText(l, x + 2, y + 72);
+  });
+  y += 150;
+  ctx.fillStyle = PDF_K.line; ctx.fillRect(PM, y, gw, 1);
+  ctx.fillStyle = PDF_K.muted; ctx.font = pf(500, 19);
+  ctx.fillText(pdfSpatie('Nienke · Maarten · Esther · Koen'), PM, y + 52);
+  const per = pdfPeriode(['dag1', 'dag18']);
+  if (per) { ctx.font = pf(400, 19); ctx.fillText(per, PB - PM - ctx.measureText(per).width, y + 52); }
+  pdfVoet(ctx, nr, tot);
+}
+
+async function pdfHoofdstuk(ctx, b, nr, tot) {
+  const gw = PB - 2 * PM, fh = 980;
+  ctx.fillStyle = PDF_K.paper; ctx.fillRect(0, 0, PB, PH);
+  ctx.fillStyle = PDF_K.donker; ctx.fillRect(0, 0, PB, fh);
+  let im = b.held ? await cgLaad(b.held.p.src) : null;
+  if (im) { cgCover(ctx, im, 0, 0, PB, fh, 0); im.src = ''; }
+  const g = ctx.createLinearGradient(0, fh - 520, 0, fh);
+  g.addColorStop(0, 'rgba(25,19,14,0)'); g.addColorStop(.55, 'rgba(25,19,14,.55)'); g.addColorStop(1, 'rgba(25,19,14,.9)');
+  ctx.fillStyle = g; ctx.fillRect(0, fh - 520, PB, 520);
+  const zee = /zanzibar/i.test(b.g.label);
+  ctx.fillStyle = zee ? '#8FD0D8' : '#E9B77A'; ctx.fillRect(PM, fh - 236, 60, 3);
+  ctx.font = pf(600, 22); ctx.fillText(pdfSpatie('Hoofdstuk ' + (b.gi + 1) + '  ·  ' + b.g.days), PM + 84, fh - 227);
+  ctx.fillStyle = '#FFFFFF'; ctx.font = pf(400, 136, true);
+  ctx.fillText(pdfTekstKort(ctx, b.g.label, gw), PM - 6, fh - 96);
+  ctx.fillStyle = 'rgba(255,255,255,.82)'; ctx.font = pf(400, 28);
+  const per = pdfPeriode(b.dagen.map(d => d.id));
+  const sub = [per, b.alle.length + ' foto' + (b.alle.length === 1 ? '' : '’s'), b.dagen.length + (b.dagen.length === 1 ? ' dag' : ' dagen')].filter(Boolean).join('   ·   ');
+  ctx.fillText(sub, PM, fh - 40);
+  if (b.held && (b.held.p.fav || b.held.duim)) {
+    ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.font = pf(400, 16, false, true);
+    const t = (b.held.p.fav ? 'Hoogtepunt' : 'Meest geliefde foto') + (b.held.duim ? ' · ' + b.held.duim + ' duim' + (b.held.duim === 1 ? 'pje' : 'pjes') : '');
+    ctx.fillText(t, PB - PM - ctx.measureText(t).width, fh - 40);
+  }
+  // onder: kaart links, overnachting rechts
+  const top = fh + 70, kw = 400;
+  pdfEyebrow(ctx, 'Op de kaart', PM, top);
+  await pdfKaart(ctx, PM, top + 26, kw, {actief: b.g.label.toLowerCase(), labels: true, klein: true});
+  const rx = PM + kw + 50, rw = gw - kw - 50;
+  pdfEyebrow(ctx, b.lodges.length > 1 ? 'Overnachtingen' : 'Overnachting', rx, top);
+  let y = top + 30;
+  if (!b.lodges.length) {
+    const d = DAYS.find(x => x.id === 'dag18');
+    ctx.fillStyle = PDF_K.ink; ctx.font = pf(400, 34, true); ctx.fillText('Nachtvlucht naar huis', rx - 1, y + 36);
+    ctx.fillStyle = PDF_K.muted; ctx.font = pf(400, 19); ctx.fillText(d ? d.days + ' · ' + d.date : '', rx, y + 68);
+  }
+  const twee = b.lodges.length > 1;
+  for (const id of b.lodges) {
+    const st = STAYS[id];
+    const ph = twee ? 150 : 250;
+    const li = await cgLaad(kleinUrl(STAYS[id].fotos[0], 1200));
+    pdfFoto(ctx, li, rx, y, rw, ph, 12); if (li) li.src = '';
+    y += ph + 30;
+    ctx.fillStyle = PDF_K.ink; ctx.font = pf(400, twee ? 28 : 34, true);
+    ctx.fillText(pdfTekstKort(ctx, st.naam, rw), rx - 1, y);
+    y += twee ? 28 : 32;
+    ctx.fillStyle = PDF_K.muted; ctx.font = pf(400, 18);
+    ctx.fillText(pdfTekstKort(ctx, [st.soort, st.plaats].filter(Boolean).join(' · '), rw), rx, y);
+    y += 30;
+    ctx.fillStyle = zee ? PDF_K.ocean : PDF_K.accent; ctx.font = pf(600, 15);
+    ctx.fillText(pdfSpatie([st.nachten, st.periode].filter(Boolean).join('  ·  ')), rx, y);
+    y += 30;
+    if (st.tekst) y += pdfTekst(ctx, st.tekst, rx, y + 6, rw, 28, twee ? 3 : 7, pf(400, 18), PDF_K.ink2) * 28 + 8;
+    if (!twee && st.feiten && st.feiten.length) {
+      y += 12;
+      st.feiten.slice(0, 2).forEach(([k, v]) => {
+        ctx.fillStyle = PDF_K.muted; ctx.font = pf(600, 14); ctx.fillText(k.toUpperCase(), rx, y + 14);
+        const n = pdfTekst(ctx, v, rx + 120, y + 14, rw - 120, 24, 2, pf(400, 17), PDF_K.ink2);
+        y += n * 24 + 10;
+      });
+    }
+    y += twee ? 26 : 0;
+  }
+  pdfVoet(ctx, nr, tot, 'Hoofdstuk ' + (b.gi + 1) + ' · ' + b.g.label);
+}
+
+async function pdfDagPagina(ctx, b, nr, tot, melden) {
+  const gw = PB - 2 * PM, d = b.d;
+  ctx.fillStyle = PDF_K.paper; ctx.fillRect(0, 0, PB, PH);
+  const zee = /zanzibar/i.test(b.g.label), kleur = zee ? PDF_K.ocean : PDF_K.accent;
+  let y;
+  if (b.kop) {
+    pdfReisBalk(ctx, PM, 118, gw, d.id, kleur);
+    y = 126 + 70;
+    pdfEyebrow(ctx, d.days + '  ·  ' + pdfDatumLang(d.id), PM, y, kleur);
+    ctx.fillStyle = PDF_K.muted; ctx.font = pf(400, 17);
+    const hs = 'Hoofdstuk ' + (b.gi + 1) + ' · ' + b.g.label; ctx.fillText(hs, PB - PM - ctx.measureText(hs).width, y);
+    y += 48;
+    const tl = pdfTekst(ctx, d.title, PM - 2, y + 44, gw, 68, 2, pf(400, 60, true), PDF_K.ink);
+    y += tl * 68 + 8;
+    // plek
+    pdfIcoon(ctx, SVG.pin, PM, y - 2, 22, kleur);
+    ctx.fillStyle = PDF_K.ink2; ctx.font = pf(500, 21); ctx.fillText(pdfTekstKort(ctx, d.loc, gw - 40), PM + 32, y + 16);
+    y += 38;
+    // overnachting
+    const vb = (VERBLIJF_PER_DAG[d.id] || []).map(v => STAYS[v.s]).filter(Boolean);
+    pdfIcoon(ctx, SVG.bed, PM, y - 2, 22, kleur);
+    ctx.fillStyle = PDF_K.ink2; ctx.font = pf(400, 20);
+    const vt = vb.length ? 'Vannacht: ' + vb.map(s => s.naam + ' · ' + s.plaats).join('  en daarna  ') : 'Nachtvlucht naar huis';
+    ctx.fillText(pdfTekstKort(ctx, vt, gw - 40), PM + 32, y + 16);
+    y += 36;
+    // cijfers van de dag
+    const n = b.fotos.length, favs = b.fotos.filter(f => f.p.fav).length, duimen = b.fotos.reduce((s, f) => s + f.duim, 0);
+    const st = [n + ' foto' + (n === 1 ? '' : '’s'), favs ? favs + ' hoogtepunt' + (favs === 1 ? '' : 'en') : '', duimen ? duimen + ' duimpje' + (duimen === 1 ? '' : 's') : ''].filter(Boolean).join('  ·  ');
+    ctx.fillStyle = PDF_K.muted; ctx.font = pf(400, 18); ctx.fillText(st, PM, y + 14);
+    y += 34;
+    ctx.fillStyle = PDF_K.line; ctx.fillRect(PM, y, gw, 1);
+    y += 46;
+    const bl = pdfTekst(ctx, dagBeschrijving(d.id), PM, y, gw, 34, 0, pf(400, 22), PDF_K.ink2);
+    y += (bl - 1) * 34 + 44;
+    if (b.tijdbalk) y += pdfDagTijdbalk(ctx, PM, y - 10, gw, b.fotos, kleur) + 20;
+    y = Math.max(y, 120 + b.kopH);
+  } else {
+    y = 126;
+    pdfEyebrow(ctx, d.days + '  ·  ' + d.date + '  ·  vervolg', PM, y, kleur);
+    ctx.fillStyle = PDF_K.ink; ctx.font = pf(400, 36, true); ctx.fillText(pdfTekstKort(ctx, d.title, gw), PM - 1, y + 54);
+    ctx.fillStyle = PDF_K.line; ctx.fillRect(PM, y + 78, gw, 1);
+    y = 236;
+  }
+  for (const blok of b.blokken) {
+    if (blok.type === 'rij') {
+      const inRij = blok.fotos.length;
+      // een onvolle laatste rij houdt de celmaat (niet uitrekken: dan vallen de verhalen van de rijen erboven uit het patroon)
+      for (let i = 0; i < inRij; i++) {
+        const f = blok.fotos[i], x = PM + i * (blok.cw + blok.gap);
+        const im = await cgLaad(f.p.src);
+        pdfFoto(ctx, im, x, y, blok.cw, blok.chh, 8); if (im) im.src = '';
+        if (f.duim) pdfPil(ctx, x + 10, y + blok.chh - 38, String(f.duim), PDF_DUIM, 'rgba(25,21,18,.72)', '#FFFFFF', 18);
+        let cy = y + blok.chh + 26;
+        if (blok.meta) {
+          const t = new Date(f.p.taken), tijd = isNaN(t) ? '' : String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0');
+          const m = [tijd, f.p.place || ''].filter(Boolean).join('  ·  ');
+          if (m) { ctx.fillStyle = PDF_K.muted; ctx.font = pf(500, 14); ctx.fillText(pdfTekstKort(ctx, m, blok.cw), x, cy - 4); }
+          cy += 22;
+        }
+        if (f.capRegels) pdfTekst(ctx, f.p.caption, x, cy, blok.cw, 24, f.capRegels, pf(400, 18), PDF_K.ink2);
+        if (melden) melden();
+      }
+    } else {
+      const f = blok.f, verhaal = (f.p.caption || '').trim();
+      const meta = [f.p.place || '', fmtTaken(f.p.taken)].filter(Boolean).join(' · ');
+      ctx.font = pf(400, 22);
+      const breedRegels = verhaal ? pdfRegels(ctx, verhaal, gw).length : 0;
+      const im = await cgLaad(f.p.src);
+      const staand = im && im.naturalHeight > im.naturalWidth * 1.02;
+      if (!verhaal) {
+        pdfFoto(ctx, im, PM, y, gw, blok.h, 10);
+        if (meta) { ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.font = pf(400, 17); ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 8; ctx.fillText(meta, PM + 22, y + blok.h - 22); ctx.restore(); }
+      } else if (breedRegels <= 3 && !staand) {
+        const th = breedRegels * 32 + 44, ih = blok.h - th;
+        pdfFoto(ctx, im, PM, y, gw, ih, 10);
+        pdfTekst(ctx, verhaal, PM, y + ih + 42, gw, 32, 3, pf(400, 22), PDF_K.ink2);
+        if (meta) { ctx.fillStyle = PDF_K.muted; ctx.font = pf(400, 16); ctx.fillText(meta, PB - PM - ctx.measureText(meta).width, y + ih + 42 + Math.min(3, breedRegels) * 32 - 8); }
+      } else {
+        const iw = staand ? 520 : 620, tx = PM + iw + 40, tw = gw - iw - 40;
+        pdfFoto(ctx, im, PM, y, iw, blok.h, 10);
+        ctx.fillStyle = kleur; ctx.fillRect(tx, y + 8, 36, 3);
+        ctx.font = pf(600, 15); ctx.fillText(pdfSpatie(f.p.fav ? 'Hoogtepunt' : 'Geliefde foto'), tx + 48, y + 16);
+        let ty = y + 54;
+        if (meta) { ctx.fillStyle = PDF_K.muted; ctx.font = pf(400, 16); ctx.fillText(pdfTekstKort(ctx, meta, tw), tx, ty); ty += 36; }
+        const max = Math.floor((y + blok.h - ty - 10) / 31);
+        pdfTekst(ctx, verhaal, tx, ty + 12, tw, 31, max, pf(400, 21), PDF_K.ink2);
+      }
+      if (im) im.src = '';
+      // badge linksboven
+      let bx = PM + 14;
+      if (f.p.fav) bx += pdfPil(ctx, bx, y + 14, 'Hoogtepunt', PDF_STER, 'rgba(255,255,255,.92)', PDF_K.accent, 20) + 8;
+      if (f.duim) pdfPil(ctx, bx, y + 14, String(f.duim), PDF_DUIM, 'rgba(25,21,18,.72)', '#FFFFFF', 20);
+      if (melden) melden();
+    }
+    y += blok.h + 24;
+  }
+  pdfVoet(ctx, nr, tot, 'Hoofdstuk ' + (b.gi + 1) + ' · ' + b.g.label + ' · ' + d.days);
+}
+
+async function pdfGeliefd(ctx, b, nr, tot, melden) {
+  const gw = PB - 2 * PM;
+  ctx.fillStyle = PDF_K.paper; ctx.fillRect(0, 0, PB, PH);
+  pdfEyebrow(ctx, 'Duimpjes', PM, 126);
+  ctx.fillStyle = PDF_K.ink; ctx.font = pf(400, 64, true); ctx.fillText('Meest geliefde foto’s', PM - 3, 214);
+  ctx.fillStyle = PDF_K.muted; ctx.font = pf(400, 21); ctx.fillText('De foto’s die de meeste duimpjes kregen van wie meekeek.', PM, 258);
+  const cols = 2, gap = 22, cw = (gw - gap) / cols, ch = 360, top = 320;
+  for (let i = 0; i < b.fotos.length; i++) {
+    const f = b.fotos[i], x = PM + (i % cols) * (cw + gap), y = top + Math.floor(i / cols) * (ch + 74);
+    const im = await cgLaad(f.p.src);
+    pdfFoto(ctx, im, x, y, cw, ch, 10); if (im) im.src = '';
+    pdfPil(ctx, x + 12, y + 12, f.duim + (f.duim === 1 ? ' duimpje' : ' duimpjes'), PDF_DUIM, 'rgba(25,21,18,.72)', '#FFFFFF', 20);
+    ctx.fillStyle = PDF_K.ink2; ctx.font = pf(400, 18);
+    const t = [f.day.days, f.day.title].join(' · ');
+    ctx.fillText(pdfTekstKort(ctx, t, cw), x, y + ch + 30);
+    if (f.p.caption) pdfTekst(ctx, f.p.caption, x, y + ch + 54, cw, 22, 1, pf(400, 16), PDF_K.muted);
+    if (melden) melden();
+  }
+  pdfVoet(ctx, nr, tot);
+}
+
+async function pdfSlot(ctx, nr, tot) {
+  const gw = PB - 2 * PM;
+  ctx.fillStyle = PDF_K.paper; ctx.fillRect(0, 0, PB, PH);
+  pdfEyebrow(ctx, 'Tot slot', PM, 126);
+  ctx.fillStyle = PDF_K.ink; ctx.font = pf(400, 64, true); ctx.fillText('De reis in cijfers', PM - 3, 214);
+  const c = reisCijfers();
+  const gespot = alleDieren().filter(d => spots[d.id]);
+  const big5 = DIEREN.filter(d => d.big5), big5Gezien = big5.filter(d => spots[d.id]).length;
+  let favs = 0, duimen = 0;
+  DAYS.forEach(d => (photos[d.id] || []).forEach(p => { if (p.fav) favs++; duimen += pdfDuim({p: p}); }));
+  const tegels = [[c.n, 'foto’s'], [c.dagen, 'dagen vastgelegd'], [favs, 'hoogtepunten'], [duimen, 'duimpjes'], [gespot.length, 'dieren gespot'], [big5Gezien + ' / 5', 'van de Big Five']];
+  let y = 300; const tw = gw / 3;
+  tegels.forEach(([v, l], i) => {
+    const x = PM + (i % 3) * tw, yy = y + Math.floor(i / 3) * 130;
+    ctx.fillStyle = PDF_K.ink; ctx.font = pf(400, 60, true); ctx.fillText(String(v), x, yy);
+    ctx.fillStyle = PDF_K.muted; ctx.font = pf(400, 18); ctx.fillText(l, x + 2, yy + 32);
+  });
+  y += 290;
+  ctx.fillStyle = PDF_K.line; ctx.fillRect(PM, y, gw, 1);
+  y += 60;
+  pdfEyebrow(ctx, 'De spotlijst', PM, y);
+  y += 60;
+  // Big Five
+  const bw = gw / 5;
+  for (let i = 0; i < big5.length; i++) {
+    const d = big5[i], x = PM + i * bw + bw / 2, s = spots[d.id];
+    const r = 62;
+    ctx.beginPath(); ctx.arc(x, y + r, r, 0, Math.PI * 2);
+    ctx.fillStyle = s ? PDF_K.surf : '#F7F3EC'; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = s ? PDF_K.accent : PDF_K.line; ctx.setLineDash(s ? [] : [6, 6]); ctx.stroke(); ctx.setLineDash([]);
+    if (s && s.src) {
+      const im = await cgLaad(kleinUrl(s.src, 400));
+      if (im) { ctx.save(); ctx.beginPath(); ctx.arc(x, y + r, r - 3, 0, Math.PI * 2); ctx.clip(); cgCover(ctx, im, x - r, y, 2 * r, 2 * r, 0); ctx.restore(); im.src = ''; }
+    } else if (s) { pdfIcoon(ctx, PDF_STER, x - 18, y + r - 18, 36, PDF_K.accent, true); }
+    ctx.textAlign = 'center';
+    ctx.fillStyle = s ? PDF_K.ink : PDF_K.muted; ctx.font = pf(600, 18); ctx.fillText(d.naam, x, y + 2 * r + 32);
+    ctx.fillStyle = PDF_K.muted; ctx.font = pf(400, 15); ctx.fillText(s ? (fmtDatum(s.date) || 'gespot') : 'nog niet gezien', x, y + 2 * r + 56);
+    ctx.textAlign = 'left';
+  }
+  y += 2 * 62 + 96;
+  // overige dieren als pilletjes
+  const rest = gespot.filter(d => !d.big5).sort((a, b) => (spots[a.id].date || '') < (spots[b.id].date || '') ? -1 : 1);
+  let x = PM; const ph = 38;
+  ctx.font = pf(500, 17);
+  rest.forEach(d => {
+    const t = d.naam + (spots[d.id].date ? '  ·  ' + fmtDatum(spots[d.id].date) : '');
+    const w = ctx.measureText(t).width + 34;
+    if (x + w > PB - PM) { x = PM; y += ph + 12; }
+    if (y > PH - 330) return;
+    ctx.fillStyle = PDF_K.surf; ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, y, w, ph, ph / 2); else ctx.rect(x, y, w, ph); ctx.fill();
+    ctx.fillStyle = PDF_K.ink2; ctx.font = pf(500, 17); ctx.fillText(t, x + 17, y + 25);
+    x += w + 10;
+  });
+  // QR + namen
+  const qy = PH - 290;
+  ctx.fillStyle = PDF_K.line; ctx.fillRect(PM, qy - 36, gw, 1);
+  try { cgQR(ctx, siteUrl(), PM, qy, 150); } catch (e) {}
+  ctx.fillStyle = PDF_K.ink; ctx.font = pf(400, 28, true); ctx.fillText('Scan voor het hele reisdagboek', PM + 180, qy + 46);
+  ctx.fillStyle = PDF_K.muted; ctx.font = pf(400, 18); ctx.fillText(siteUrl().replace(/^https?:\/\//, '').replace(/\/$/, ''), PM + 180, qy + 80);
+  ctx.font = pf(500, 17); ctx.fillText(pdfSpatie('Nienke · Maarten · Esther · Koen'), PM + 180, qy + 124);
+  pdfVoet(ctx, nr, tot);
+}
+
 var _albumPdf = null;   // {blob, naam}
 
 async function heelAlbumPdf() {
   if (_cgBezig) return;
   const opties = pdfOpties();
-  const pag = pdfPaginasMetTekst(opties.max), tot = boekTotaal();
+  const tot = boekTotaal();
   if (!tot) return;
   if (!await ensureUnlocked('Wachtwoord om het album te maken:')) return;
   if (_cgBezig) return;
@@ -8903,41 +9353,30 @@ async function heelAlbumPdf() {
   if (knop) knop.disabled = true;
   try {
     try { await document.fonts.ready; } catch (e) {}
-    const plekken = new Set(pag.filter(x => x.h.s !== '_thuis').map(x => x.h)).size;
-    // tekstpagina's kunnen doorlopen; het totaal weten we pas als ze getekend zijn.
-    // Schatting vooraf (1 per hoofdstuk); de voet van de fotopagina's krijgt het echte getal.
-    let totaal = pag.length + 1;
+    const plan = albumPlan(opties), totaal = plan.length;
     const paginas = [];
-    melden('Omslag…');
-    const om = await tekenOmslagPdf(tot, plekken, omslagFoto());
-    const omJpg = await canvasJpeg(om, Math.max(0.9, pdfKwaliteit()));
-    paginas.push({jpg: await blobBytes(omJpg), w: om.width, h: om.height});
-    om.width = om.height = 0;
-    let gedaan = 0;
-    // Eerst de programma-pagina's tekenen (die bepalen het totaal), daarna de foto's.
-    const tekstCanvassen = new Map();
-    for (let k = 0; k < pag.length; k++) {
-      if (!pag[k].tekst) continue;
-      melden('Programma…');
-      const cs = await tekenTekstPdf(pag[k], 0, () => 0);
-      tekstCanvassen.set(pag[k], cs);
-      totaal += cs.length - 1;
-    }
-    let nr = 2;
-    for (let k = 0; k < pag.length; k++) {
-      if (pag[k].tekst) {
-        // opnieuw tekenen met het juiste paginanummer (goedkoop: alleen tekst)
-        tekstCanvassen.get(pag[k]).forEach(c => { c.width = c.height = 0; });
-        const cs = await tekenTekstPdf(pag[k], nr, () => totaal);
-        for (const c of cs) {
-          paginas.push({jpg: await blobBytes(await canvasJpeg(c, pdfKwaliteit())), w: c.width, h: c.height});
-          c.width = c.height = 0; nr++;
-        }
-        continue;
+    let gedaan = 0, omJpg = null;
+    const tel = () => { gedaan++; melden('Foto ' + gedaan + '/' + tot); };
+    for (let k = 0; k < plan.length; k++) {
+      const b = plan[k], nr = k + 1;
+      melden('Pagina ' + nr + '/' + totaal);
+      let c;
+      if (b.type === 'omslag') {
+        c = await tekenOmslagPdf(tot, UPLOAD_GROUPS.filter(g => g.ids.some(id => (photos[id] || []).length)).length, omslagFoto());
+      } else {
+        let ctx; [c, ctx] = pdfCanvas();
+        ctx.textBaseline = 'alphabetic';
+        if (b.type === 'overzicht') await pdfOverzicht(ctx, nr, totaal);
+        else if (b.type === 'hoofdstuk') await pdfHoofdstuk(ctx, b, nr, totaal);
+        else if (b.type === 'dag') await pdfDagPagina(ctx, b, nr, totaal, tel);
+        else if (b.type === 'geliefd') await pdfGeliefd(ctx, b, nr, totaal);
+        else if (b.type === 'slot') await pdfSlot(ctx, nr, totaal);
       }
-      const c = await tekenBladPdf(pag[k], nr, totaal, () => { gedaan++; melden('Bezig… ' + gedaan + '/' + tot); });
-      paginas.push({jpg: await blobBytes(await canvasJpeg(c, pdfKwaliteit())), w: c.width, h: c.height});
-      c.width = c.height = 0; nr++;
+      const q = b.type === 'omslag' ? Math.max(0.9, pdfKwaliteit()) : pdfKwaliteit();
+      const jpg = await canvasJpeg(c, q);
+      if (b.type === 'omslag') omJpg = jpg;
+      paginas.push({jpg: await blobBytes(jpg), w: c.width, h: c.height});
+      c.width = c.height = 0;
     }
     melden('PDF maken…');
     const pdf = maakPdf(paginas, 'Tanzania & Zanzibar 2026 - fotoalbum');
@@ -8957,7 +9396,7 @@ async function heelAlbumPdf() {
       'Fotoalbum · ' + totaal + " pagina's · " + tot + ' foto' + (tot === 1 ? '' : "'s") + ' · ' + opties.dpi + ' dpi · ' + (Math.round(pdf.size / 1024 / 1024 * 10) / 10) + ' MB';
     const hint = document.getElementById('collageHint');
     if (hint) { if (_boekHint === null) _boekHint = hint.innerHTML;
-      hint.innerHTML = 'Eén PDF op A4 (' + opties.dpi + ' dpi): een omslag en per overnachtingsplek eerst een pagina met het programma dag voor dag, daarna de foto\u2019s (hooguit ' + opties.max + ' per pagina). Op de telefoon kun je hem met <em>Delen</em> in Bestanden bewaren of via WhatsApp versturen.'; }
+      hint.innerHTML = 'Eén PDF op A4 (' + opties.dpi + ' dpi): omslag, een overzicht met de kaart, per bestemming een hoofdstukpagina met de overnachting, en per dag de beschrijving en de foto’s met jullie verhalen. Hoogtepunten en foto’s met duimpjes staan groot. Op de telefoon kun je hem met <em>Delen</em> in Bestanden bewaren of via WhatsApp versturen.'; }
     const deel = document.getElementById('collageDeel');
     let kanDelen = false;
     try { kanDelen = !!(navigator.canShare && navigator.canShare({files: [new File([pdf], naam, {type: 'application/pdf'})]})); } catch (e) {}
