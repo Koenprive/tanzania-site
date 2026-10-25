@@ -943,6 +943,20 @@ footer{background:var(--ink);color:rgba(255,255,255,.55);padding:3.5rem 0 calc(2
 .spot-ring .fg{stroke:var(--accent);stroke-linecap:round;transition:stroke-dasharray .6s cubic-bezier(.2,.8,.2,1);}
 .spot-score-txt strong{display:block;font-family:var(--display);font-size:1.2rem;font-weight:500;letter-spacing:-.02em;}
 .spot-score-txt span{font-size:.76rem;color:var(--muted);}
+/* tellertje: totaal gespot */
+.spot-tellers{display:flex;align-items:center;gap:1.4rem;flex-wrap:wrap;}
+.spot-totaal{background:var(--surface);border:1px solid var(--line);border-radius:100px;padding:.55rem 1.15rem .55rem .6rem;}
+.spot-poot{width:44px;height:44px;border-radius:50%;background:var(--accent-weak);color:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .35s cubic-bezier(.2,.9,.3,1.4);}
+.spot-poot svg{width:24px;height:24px;}
+.spot-totaal.hup .spot-poot{transform:rotate(-14deg) scale(1.15);}
+.spot-getal{display:inline-block;font-variant-numeric:tabular-nums;}
+.spot-totaal.hup .spot-getal{animation:spotHup .5s cubic-bezier(.2,.9,.3,1.3);}
+@keyframes spotHup{0%{transform:translateY(0)}35%{transform:translateY(-7px) scale(1.18)}100%{transform:translateY(0)}}
+.spot-totaal .spot-score-txt strong{white-space:nowrap;}
+.spot-totaal .spot-score-txt strong span{display:inline;font-size:inherit;color:inherit;}
+.spot-totaal .spot-score-txt strong .spot-getal{display:inline-block;}
+.spot-totaal .spot-score-txt > span{display:block;max-width:240px;line-height:1.35;}
+@media(max-width:560px){.spot-tellers{width:100%;flex-direction:column;align-items:stretch;gap:.8rem;}.spot-totaal{border-radius:18px;}.spot-totaal .spot-score-txt > span{max-width:none;}}
 .big5-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:.9rem;}
 .spot-card{
   background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
@@ -2576,15 +2590,26 @@ body.sleepbezig{-webkit-user-select:none;user-select:none;cursor:grabbing;}
         <h2 class="sec-title">De spotlijst</h2>
         <p class="sec-sub">Vink af zodra je er een ziet &mdash; datum en plek komen er vanzelf bij. Tik op het rondje links om er je eigen foto in te zetten &mdash; en daarna om hem groot te bekijken. Iets gezien dat er niet tussen staat? Zet het erbij met <strong>+ Ander dier</strong>.</p>
       </div>
-      <div class="spot-score">
-        <svg class="spot-ring" viewBox="0 0 40 40">
-          <circle class="bg" cx="20" cy="20" r="16"/>
-          <circle class="fg" id="spotRing" cx="20" cy="20" r="16"
-                  transform="rotate(-90 20 20)" stroke-dasharray="0 100.5"/>
-        </svg>
-        <div class="spot-score-txt">
-          <strong id="spotScore">0 van de 5</strong>
-          <span>van de Big Five</span>
+      <div class="spot-tellers">
+        <div class="spot-score">
+          <svg class="spot-ring" viewBox="0 0 40 40">
+            <circle class="bg" cx="20" cy="20" r="16"/>
+            <circle class="fg" id="spotRing" cx="20" cy="20" r="16"
+                    transform="rotate(-90 20 20)" stroke-dasharray="0 100.5"/>
+          </svg>
+          <div class="spot-score-txt">
+            <strong id="spotScore">0 van de 5</strong>
+            <span>van de Big Five</span>
+          </div>
+        </div>
+        <div class="spot-score spot-totaal" id="spotTotaalVak">
+          <div class="spot-poot" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="currentColor"><ellipse cx="7.2" cy="8.6" rx="2" ry="2.7"/><ellipse cx="16.8" cy="8.6" rx="2" ry="2.7"/><ellipse cx="3.9" cy="13.2" rx="1.7" ry="2.2"/><ellipse cx="20.1" cy="13.2" rx="1.7" ry="2.2"/><path d="M12 11.2c-3.1 0-5.9 3.1-5.9 5.8 0 1.6 1.2 2.6 2.6 2.6 1.2 0 2-.6 3.3-.6s2.1.6 3.3.6c1.4 0 2.6-1 2.6-2.6 0-2.7-2.8-5.8-5.9-5.8z"/></svg>
+          </div>
+          <div class="spot-score-txt">
+            <strong><span class="spot-getal" id="spotTotaal">0</span> <span id="spotTotaalWoord">dieren gespot</span></strong>
+            <span id="spotTotaalSub">Nog niks — ogen open!</span>
+          </div>
         </div>
       </div>
     </div>
@@ -6636,6 +6661,56 @@ function renderSpots() {
   if (ring) {
     const omtrek = 2 * Math.PI * 16;
     ring.setAttribute('stroke-dasharray', (omtrek * n / 5).toFixed(1) + ' ' + omtrek.toFixed(1));
+  }
+  renderSpotTotaal();
+}
+
+// Tellertje "N dieren gespot": telt oplopend, met een knipoog eronder.
+var _spotTotaalVorig = null;
+function spotTotaalTekst(n, metFoto, laatste) {
+  const zin = n === 0 ? 'Nog niks — ogen open!'
+    : n < 3 ? 'Goed begin'
+    : n < 6 ? 'Lekker bezig'
+    : n < 10 ? 'Dit begint op een safari te lijken'
+    : n < 15 ? 'Echte spotters'
+    : n < 20 ? 'Safari-pro’s'
+    : n < 25 ? 'De gids kan naar huis'
+    : 'Dit is bijna een dierentuin';
+  const delen = [zin];
+  if (metFoto) delen.push(metFoto + ' met foto');
+  if (laatste) delen.push('laatste: ' + laatste);
+  return delen.join(' · ');
+}
+function renderSpotTotaal() {
+  const el = document.getElementById('spotTotaal');
+  const vak = document.getElementById('spotTotaalVak');
+  if (!el || !vak) return;
+  const gespot = alleDieren().filter(d => spots[d.id]);
+  const n = gespot.length;
+  const metFoto = gespot.filter(d => spots[d.id].src).length;
+  let laatste = null;
+  gespot.forEach(d => { const s = spots[d.id]; if (s.date && (!laatste || s.date >= laatste.date)) laatste = {date: s.date, naam: d.naam}; });
+  document.getElementById('spotTotaalWoord').textContent = n === 1 ? 'dier gespot' : 'dieren gespot';
+  document.getElementById('spotTotaalSub').textContent = spotTotaalTekst(n, metFoto, laatste ? laatste.naam : '');
+  const van = _spotTotaalVorig === null ? 0 : _spotTotaalVorig;
+  const gestegen = _spotTotaalVorig !== null && n > _spotTotaalVorig;
+  _spotTotaalVorig = n;
+  // oplopend tellen (ook bij de eerste keer, vanaf 0)
+  const start = performance.now(), duur = Math.min(900, 250 + Math.abs(n - van) * 60);
+  const rm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (rm || n === van) { el.textContent = n; }
+  else {
+    cancelAnimationFrame(el._raf);
+    const stap = now => {
+      const t = Math.min(1, (now - start) / duur), e = 1 - Math.pow(1 - t, 3);
+      el.textContent = Math.round(van + (n - van) * e);
+      if (t < 1) el._raf = requestAnimationFrame(stap);
+    };
+    el._raf = requestAnimationFrame(stap);
+  }
+  if (gestegen) {
+    vak.classList.remove('hup'); void vak.offsetWidth; vak.classList.add('hup');
+    clearTimeout(vak._tm); vak._tm = setTimeout(() => vak.classList.remove('hup'), 600);
   }
 }
 
