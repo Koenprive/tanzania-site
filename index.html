@@ -838,23 +838,64 @@ footer{background:var(--ink);color:rgba(255,255,255,.55);padding:3.5rem 0 calc(2
   .lb-duim{top:max(calc(env(safe-area-inset-top,0px) + 16px),60px);left:max(env(safe-area-inset-left,0px),10px);height:44px;border-radius:22px;}
 }
 
-/* ─────────── FOTO-STIPPEN OP DE KAART ─────────── */
-.photo-dots{position:absolute;inset:0;pointer-events:none;}
-.pdot{
+/* ─────────── FOTOPLEKKEN OP DE KAART ───────────
+   Eén marker per plek (rond fotootje + aantal) in plaats van een stip per foto.
+   Tik → onderschuifvenster met alle foto's van die plek. */
+.photo-dots{position:absolute;inset:0;pointer-events:none;z-index:3;}
+.kplek{
   position:absolute;transform:translate(-50%,-50%);
-  width:11px;height:11px;padding:0;border-radius:50%;
-  background:#3B2E22;border:2px solid #fff;
-  box-shadow:0 1px 4px rgba(40,28,14,.45);
-  cursor:pointer;pointer-events:all;
-  transition:transform .18s,background .18s;
+  width:40px;height:40px;padding:0;border-radius:50%;
+  border:2.5px solid #fff;background:var(--surface-2);
+  box-shadow:0 2px 8px rgba(40,28,14,.35),0 0 0 1px rgba(40,28,14,.08);
+  cursor:pointer;pointer-events:auto;overflow:visible;
+  transition:transform .18s,box-shadow .18s;
+  -webkit-tap-highlight-color:transparent;
 }
-.pdot:hover{background:var(--accent);transform:translate(-50%,-50%) scale(1.45);}
+.kplek img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;}
+.kplek .kp-n{
+  position:absolute;right:-7px;top:-7px;min-width:21px;height:21px;padding:0 5px;
+  border-radius:11px;background:var(--accent);color:#fff;border:2px solid #fff;
+  font-family:var(--sans);font-size:.66rem;font-weight:700;line-height:17px;text-align:center;
+  box-shadow:0 1px 4px rgba(40,28,14,.3);
+}
+.kplek.zee .kp-n{background:var(--ocean);}
+.kplek:hover,.kplek:focus-visible{transform:translate(-50%,-50%) scale(1.12);box-shadow:0 4px 14px rgba(40,28,14,.4);outline:none;}
+.kplek:active{transform:translate(-50%,-50%) scale(1.04);}
+.kplek.groot{width:48px;height:48px;}
+.kplek .kp-lbl{position:absolute;left:50%;top:calc(100% + 4px);transform:translateX(-50%);white-space:nowrap;
+  font-family:var(--sans);font-size:.7rem;font-weight:600;color:var(--ink);letter-spacing:-.01em;pointer-events:none;
+  text-shadow:0 1px 0 rgba(255,255,255,.95),0 0 6px rgba(255,255,255,.95),0 0 2px #fff;}
+.kplek.lbl-links .kp-lbl{left:auto;right:calc(100% + 6px);top:50%;transform:translateY(-50%);}
+.kplek.lbl-rechts .kp-lbl{left:calc(100% + 6px);top:50%;transform:translateY(-50%);}
+.pin.bedekt .pin-lbl,.pin.bedekt .pin-pulse{display:none;}   /* fotomarker staat erbovenop: label zou eronder vandaan steken */
+@media(max-width:720px){
+  .kplek{width:36px;height:36px;border-width:2px;}
+  .kplek.groot{width:42px;height:42px;}
+  .kplek .kp-n{min-width:19px;height:19px;font-size:.62rem;line-height:15px;right:-6px;top:-6px;}
+  .kplek .kp-lbl{font-size:.6rem;top:calc(100% + 3px);}
+}
 .dots-note{display:flex;align-items:center;gap:.55rem;}
 .dots-note[hidden]{display:none;}
 .dots-note i.pd{
-  width:9px;height:9px;border-radius:50%;background:#3B2E22;
+  width:12px;height:12px;border-radius:50%;background:var(--accent);
   border:2px solid #fff;box-shadow:0 0 0 1px var(--line);flex-shrink:0;
 }
+/* venster met de foto's van een plek */
+.kaart-backdrop{z-index:290;}   /* onder de lightbox (300): een foto opent erbovenop en je komt hier terug */
+.kaart-backdrop .deel-venster{max-width:560px;}
+.kp-sub{font-family:var(--sans);font-size:.82rem;color:var(--muted);margin:-.4rem 0 0;}
+.kp-lijst{display:flex;flex-direction:column;gap:1rem;max-height:62vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:2px;overscroll-behavior:contain;}
+.kp-sectie h4{font-family:var(--sans);font-size:.78rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);margin:0 0 .5rem;display:flex;gap:.5rem;align-items:baseline;flex-wrap:wrap;}
+.kp-sectie h4 small{font-weight:500;letter-spacing:0;text-transform:none;color:var(--muted);font-size:.76rem;}
+.kp-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;}
+@media(min-width:600px){.kp-grid{grid-template-columns:repeat(5,1fr);gap:6px;}}
+.kp-foto{position:relative;padding:0;border:0;background:var(--line-soft);border-radius:var(--r-sm);overflow:hidden;cursor:pointer;height:0;padding-bottom:100%;-webkit-tap-highlight-color:transparent;}
+.kp-foto img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;}
+.kp-foto .kp-dag{position:absolute;left:4px;bottom:4px;padding:1px 6px;border-radius:100px;background:rgba(25,21,18,.72);color:#fff;font-family:var(--sans);font-size:.6rem;font-weight:600;letter-spacing:.03em;}
+.kp-foto .kp-ster{position:absolute;right:4px;top:4px;width:14px;height:14px;color:#F2C14E;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5));}
+.kp-foto:active img{opacity:.85;}
+.kp-naar{display:inline-flex;align-items:center;gap:.4rem;margin-top:.35rem;font-family:var(--sans);font-size:.78rem;color:var(--muted);background:none;border:0;padding:0;cursor:pointer;}
+.kp-naar:hover{color:var(--ink);}
 
 /* lightbox-meta */
 .lb-figure figcaption p{white-space:pre-wrap;margin-top:.5rem;}
@@ -2834,6 +2875,16 @@ body.sleepbezig{-webkit-user-select:none;user-select:none;cursor:grabbing;}
     <p class="weg-uitleg" id="wegUitleg">De foto en het verhaal erbij verdwijnen voor iedereen. Direct erna kun je het nog ongedaan maken.</p>
     <button class="weg-knop" id="wegJa" onclick="wegAntwoord(true)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/><path d="M10 11v6M14 11v6"/></svg>Verwijderen</button>
     <div class="deel-rij"><button class="vb-link2" onclick="wegAntwoord(false)">Annuleren</button></div>
+  </div>
+</div>
+<!-- ── FOTO'S VAN EEN PLEK OP DE KAART ── -->
+<div class="deel-backdrop kaart-backdrop" id="kaartModal" hidden role="dialog" aria-modal="true" aria-labelledby="kaartTitel" onclick="if(event.target===this)sluitKaartPlek()">
+  <div class="deel-venster">
+    <div class="deel-greep" aria-hidden="true"></div>
+    <button class="vb-sluit" onclick="sluitKaartPlek()" aria-label="Sluiten"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    <h3 class="deel-kop" id="kaartTitel">Plek</h3>
+    <p class="kp-sub" id="kaartSub"></p>
+    <div class="kp-lijst" id="kaartLijst"></div>
   </div>
 </div>
 <!-- ── FOTO NAAR EEN ANDERE DAG ── -->
@@ -4928,30 +4979,172 @@ function projectPct(lat, lon) {
   return {x: x / MAP_PROJ.w * 100, y: y / MAP_PROJ.h * 100};
 }
 
-function renderPhotoDots() {
-  const layer = document.getElementById('photoDots');
-  if (!layer) return;
-  let html = '', n = 0, buiten = 0;
+// Eén marker per plek. Plekken die op de kaart te dicht bij elkaar liggen (afhankelijk van
+// de echte breedte van de kaart) worden samengevoegd, zodat markers elkaar niet afdekken.
+var _kaartPlekken = [];
+
+function kaartDrempel() {
+  const stage = document.querySelector('.map-stage');
+  const w = stage ? stage.getBoundingClientRect().width : 0;
+  if (!w) return 11;                       // tab nog verborgen: ruime schatting
+  return Math.min(18, Math.max(7, 46 / w * 100));   // ±46 px tussen twee markers, in % van de breedte
+}
+
+function bouwKaartPlekken() {
+  const perPlek = {};
+  let n = 0, buiten = 0;
   DAYS.forEach(d => {
     (photos[d.id] || []).forEach((p, i) => {
       if (typeof p.lat !== 'number' || typeof p.lon !== 'number') return;
       n++;
       const pt = projectPct(p.lat, p.lon);
       if (!pt) { buiten++; return; }
-      const label = [p.place || '', fmtTaken(p.taken)].filter(Boolean).join(' · ');
-      html += '<button class="pdot" style="left:' + pt.x.toFixed(2) + '%;top:' + pt.y.toFixed(2) +
-              '%" title="' + esc(label) + '" aria-label="' + esc(label) +
-              '" onclick="openLightbox(&#39;' + d.id + '&#39;,' + i + ')"></button>';
+      const naam = p.place || placeName(p.lat, p.lon);
+      const g = perPlek[naam] || (perPlek[naam] = {naam, fotos: [], sx: 0, sy: 0});
+      g.fotos.push({p, dayId: d.id, idx: i, day: d});
+      g.sx += pt.x; g.sy += pt.y;
     });
   });
-  layer.innerHTML = html;
+  // plekken, grootste eerst; daarna samenvoegen wat te dicht op elkaar zit
+  const plekken = Object.values(perPlek).map(g => ({
+    naam: g.naam, delen: [g], fotos: g.fotos.slice(),
+    x: g.sx / g.fotos.length, y: g.sy / g.fotos.length
+  })).sort((a, b) => b.fotos.length - a.fotos.length);
+  const drempel = kaartDrempel();
+  const clusters = plekken;
+  const afstand = (a, b) => Math.hypot(a.x - b.x, (a.y - b.y) * (MAP_PROJ.h / MAP_PROJ.w));
+  // steeds de twee dichtstbijzijnde samenvoegen tot alles ver genoeg uit elkaar ligt
+  for (;;) {
+    let best = null;
+    for (let i = 0; i < clusters.length; i++) for (let j = i + 1; j < clusters.length; j++) {
+      const d = afstand(clusters[i], clusters[j]);
+      if (d < drempel && (!best || d < best.d)) best = {i, j, d};
+    }
+    if (!best) break;
+    const a = clusters[best.i], b = clusters[best.j];
+    const tot = a.fotos.length + b.fotos.length;
+    a.x = (a.x * a.fotos.length + b.x * b.fotos.length) / tot;
+    a.y = (a.y * a.fotos.length + b.y * b.fotos.length) / tot;
+    a.fotos = a.fotos.concat(b.fotos);
+    a.delen = a.delen.concat(b.delen);
+    clusters.splice(best.j, 1);
+  }
+  clusters.forEach(c => {
+    c.fotos.sort((a, b) => (a.p.taken || '9') < (b.p.taken || '9') ? -1 : 1);
+    c.omslag = c.fotos.find(f => f.p.fav) || c.fotos[0];
+    c.zee = /zanzibar|pemba|dar es salaam/i.test(c.naam);
+  });
+  return {clusters, n, buiten};
+}
+
+function kortePlek(naam) { return String(naam).replace(/, Zanzibar$/, '').replace(/ National Park$/, ''); }
+
+function renderPhotoDots() {
+  const layer = document.getElementById('photoDots');
+  if (!layer) return;
+  const {clusters, n, buiten} = bouwKaartPlekken();
+  _kaartPlekken = clusters;
+  // label onder de marker, tenzij er rechtsonder/linksonder een andere marker zit: dan opzij
+  const st0 = document.querySelector('.map-stage');
+  const sw0 = st0 ? st0.getBoundingClientRect().width : 0, sh0 = st0 ? st0.getBoundingClientRect().height : 0;
+  clusters.forEach(c => {
+    c.zijde = '';
+    if (!sw0 || !sh0) return;
+    clusters.forEach(c2 => {
+      if (c2 === c) return;
+      const dx = (c2.x - c.x) / 100 * sw0, dy = (c2.y - c.y) / 100 * sh0;
+      if (dy > -12 && dy < 55) {
+        if (dx > 0 && dx < 90) c.zijde = 'lbl-links';
+        else if (dx < 0 && dx > -90 && !c.zijde) c.zijde = 'lbl-rechts';
+      }
+    });
+  });
+  layer.innerHTML = clusters.map((c, ci) => {
+    const o = c.omslag.p;
+    const meer = c.delen.length > 1 ? ' + ' + (c.delen.length - 1) + ' plek' + (c.delen.length > 2 ? 'ken' : '') + ' in de buurt' : '';
+    const label = kortePlek(c.naam) + meer + ' · ' + c.fotos.length + ' foto' + (c.fotos.length > 1 ? "'s" : '');
+    return '<button class="kplek' + (c.zee ? ' zee' : '') + (c.fotos.length >= 20 ? ' groot' : '') + (c.zijde ? ' ' + c.zijde : '') +
+           '" style="left:' + c.x.toFixed(2) + '%;top:' + c.y.toFixed(2) + '%" title="' + esc(label) +
+           '" aria-label="' + esc(label) + ' bekijken" onclick="openKaartPlek(' + ci + ')">' +
+           '<img ' + imgAttr(o, 120) + ' alt="" loading="lazy" decoding="async">' +
+           '<span class="kp-n">' + c.fotos.length + '</span>' +
+           '<span class="kp-lbl">' + esc(kortePlek(c.naam)) + (c.delen.length > 1 ? ' +' + (c.delen.length - 1) : '') + '</span></button>';
+  }).join('');
+  // route-pin die onder een fotomarker valt, of waarvan het label tegen het label van een
+  // marker aan zou komen: label en pulse verbergen (de marker zegt al waar je bent)
+  const stage = document.querySelector('.map-stage');
+  const sw = stage ? stage.getBoundingClientRect().width : 0, sh = stage ? stage.getBoundingClientRect().height : 0;
+  if (sw && sh) {
+    const r = sw < 500 ? 18 : 20;    // straal van de marker in px
+    document.querySelectorAll('.map-stage .pin').forEach(pin => {
+      const px = parseFloat(pin.style.left) / 100 * sw, py = parseFloat(pin.style.top) / 100 * sh;
+      const bedekt = clusters.some(c => {
+        const cx = c.x / 100 * sw, cy = c.y / 100 * sh;
+        if (Math.hypot(cx - px, cy - py) < r + 8) return true;             // pin onder de marker
+        if (c.zijde) return Math.abs(cy - py) < 12 && Math.abs(cx - px) < 110;  // zijlabel op dezelfde hoogte
+        return Math.abs(cy + r + 10 - py) < 12 && Math.abs(cx - px) < 70;  // labels op dezelfde hoogte
+      });
+      pin.classList.toggle('bedekt', bedekt);
+    });
+  }
   const note = document.getElementById('dotsNote');
   if (note) {
     note.hidden = n === 0;
-    note.innerHTML = n ? '<i class="pd"></i>' + n + ' foto' + (n > 1 ? "'s" : '') + ' met locatie' +
+    note.innerHTML = n ? '<i class="pd"></i>' + n + ' foto' + (n > 1 ? "'s" : '') + ' op ' + clusters.length +
+                         ' plek' + (clusters.length === 1 ? '' : 'ken') + ' — tik op een plek' +
                          (buiten ? ' (' + buiten + ' buiten de kaart)' : '') : '';
   }
 }
+
+// kaart wordt breder/smaller (telefoon draaien) of de tab komt in beeld → opnieuw samenvoegen
+(function () {
+  let t = null;
+  window.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(renderPhotoDots, 200); });
+})();
+
+function openKaartPlek(ci) {
+  const c = _kaartPlekken[ci];
+  const m = document.getElementById('kaartModal');
+  if (!c || !m) return;
+  const dagen = [];
+  c.fotos.forEach(f => { if (dagen.indexOf(f.day) < 0) dagen.push(f.day); });
+  dagen.sort((a, b) => DAYS.indexOf(a) - DAYS.indexOf(b));
+  const dagTekst = dagen.length === 1 ? dagen[0].days
+                 : dagen[0].days + '–' + dagen[dagen.length - 1].days.replace(/^Dag /, '');
+  document.getElementById('kaartTitel').textContent = kortePlek(c.naam);
+  document.getElementById('kaartSub').textContent =
+    c.fotos.length + ' foto' + (c.fotos.length > 1 ? "'s" : '') + ' · ' + dagTekst +
+    (c.delen.length > 1 ? ' · ' + c.delen.length + ' plekken bij elkaar' : '');
+  // Meerdere plekken samengevoegd → per plek een kopje; anders per dag.
+  const secties = c.delen.length > 1
+    ? c.delen.map(g => ({kop: kortePlek(g.naam), fotos: g.fotos.slice().sort((a, b) => (a.p.taken || '9') < (b.p.taken || '9') ? -1 : 1), badge: true}))
+    : dagen.map(d => ({kop: d.days + ' · ' + d.date, sub: d.title, fotos: c.fotos.filter(f => f.day === d), badge: false, dagId: d.id}));
+  const ster = '<svg class="kp-ster" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.4l-5.9 3.2 1.3-6.6L2.5 9.4l6.6-.8z"/></svg>';
+  document.getElementById('kaartLijst').innerHTML = secties.map(sec =>
+    '<div class="kp-sectie"><h4>' + esc(sec.kop) + (sec.sub ? '<small>' + esc(sec.sub) + '</small>' : '') +
+    '<small>' + sec.fotos.length + ' foto' + (sec.fotos.length > 1 ? "'s" : '') + '</small></h4><div class="kp-grid">' +
+    sec.fotos.map(f =>
+      '<button class="kp-foto" onclick="openLightbox(\'' + f.dayId + '\',' + f.idx + ')" aria-label="Foto groot bekijken">' +
+      '<img ' + imgAttr(f.p, 240) + ' alt="" loading="lazy" decoding="async">' +
+      (sec.badge ? '<span class="kp-dag">' + esc(f.day.days) + '</span>' : '') + (f.p.fav ? ster : '') + '</button>'
+    ).join('') + '</div>' +
+    (sec.dagId ? '<button class="kp-naar" onclick="sluitKaartPlek();toonTab(\'route\');openDagPagina(\'' + sec.dagId + '\')">' + SVG.pin + ' Naar ' + esc(sec.kop.split(' · ')[0]) + ' in de route</button>' : '') +
+    '</div>'
+  ).join('');
+  m.hidden = false;
+  document.getElementById('kaartLijst').scrollTop = 0;
+}
+
+function sluitKaartPlek() {
+  const m = document.getElementById('kaartModal');
+  if (m) m.hidden = true;
+}
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  const m = document.getElementById('kaartModal'), lb = document.getElementById('lightbox');
+  if (!m || m.hidden || (lb && !lb.hidden)) return;
+  sluitKaartPlek();
+});
 
 // ── LIGHTBOX ──
 var _slides = {};
@@ -10111,6 +10304,7 @@ function toonTab(naam, stil) {
     }
     try { history.replaceState(null, '', '#' + naam); } catch(e) {}
   }
+  if (naam === 'kaart' && typeof renderPhotoDots === 'function') renderPhotoDots();
   if (typeof initReveal === 'function') initReveal();
   bijwerkVoortgang();
 }
