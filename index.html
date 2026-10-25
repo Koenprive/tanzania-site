@@ -249,7 +249,7 @@ section.band{padding:clamp(4rem,9vw,7rem) 0;scroll-margin-top:calc(var(--nav-h) 
 .map-note i{display:inline-block;width:24px;height:0;border-top:2px dotted var(--accent);flex-shrink:0;}
 .map-note i.fly{border-top:2px dashed var(--ocean);}
 .tzmap{width:100%;height:auto;display:block;}
-.pin{position:absolute;transform:translate(-50%,-50%);cursor:default;}
+.pin{position:absolute;transform:translate(-50%,-50%);cursor:default;z-index:4;}
 .pin-dot{
   width:13px;height:13px;border-radius:50%;background:var(--accent);
   border:2.5px solid var(--surface);box-shadow:0 2px 6px rgba(40,30,18,.28);
@@ -842,11 +842,13 @@ footer{background:var(--ink);color:rgba(255,255,255,.55);padding:3.5rem 0 calc(2
    Eén marker per plek (rond fotootje + aantal) in plaats van een stip per foto.
    Tik → onderschuifvenster met alle foto's van die plek. */
 .photo-dots{position:absolute;inset:0;pointer-events:none;z-index:3;}
+.kplek{z-index:5;}
 .kplek{
   position:absolute;transform:translate(-50%,-50%);
   width:44px;height:44px;padding:0;border-radius:50%;
   border:2.5px solid #fff;background:var(--surface-2);
-  box-shadow:0 2px 8px rgba(40,28,14,.35),0 0 0 1px rgba(40,28,14,.08);
+  box-shadow:0 0 0 1.5px var(--accent),0 4px 12px rgba(40,28,14,.32);
+  animation:kpIn .5s cubic-bezier(.2,.8,.2,1) both;
   cursor:pointer;pointer-events:auto;overflow:visible;
   transition:transform .18s,box-shadow .18s;
   -webkit-tap-highlight-color:transparent;
@@ -858,15 +860,26 @@ footer{background:var(--ink);color:rgba(255,255,255,.55);padding:3.5rem 0 calc(2
   font-family:var(--sans);font-size:.66rem;font-weight:700;line-height:17px;text-align:center;
   box-shadow:0 1px 4px rgba(40,28,14,.3);
 }
+.kplek.zee{box-shadow:0 0 0 1.5px var(--ocean),0 4px 12px rgba(40,28,14,.32);}
 .kplek.zee .kp-n{background:var(--ocean);}
-.kplek:hover,.kplek:focus-visible{transform:translate(-50%,-50%) scale(1.12);box-shadow:0 4px 14px rgba(40,28,14,.4);outline:none;}
+@keyframes kpIn{from{opacity:0;transform:translate(-50%,-50%) scale(.6)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+@media(prefers-reduced-motion:reduce){.kplek{animation:none;}}
+.kplek:hover,.kplek:focus-visible{transform:translate(-50%,-50%) scale(1.12);box-shadow:0 0 0 1.5px var(--accent),0 6px 16px rgba(40,28,14,.4);outline:none;}
 .kplek:active{transform:translate(-50%,-50%) scale(1.04);}
 .kplek .kp-lbl{position:absolute;left:50%;top:calc(100% + 4px);transform:translateX(-50%);white-space:nowrap;
   font-family:var(--sans);font-size:.7rem;font-weight:600;color:var(--ink);letter-spacing:-.01em;pointer-events:none;
   text-shadow:0 1px 0 rgba(255,255,255,.95),0 0 6px rgba(255,255,255,.95),0 0 2px #fff;}
 .kplek.lbl-links .kp-lbl{left:auto;right:calc(100% + 6px);top:50%;transform:translateY(-50%);}
 .kplek.lbl-rechts .kp-lbl{left:calc(100% + 6px);top:50%;transform:translateY(-50%);}
-.pin.bedekt .pin-lbl,.pin.bedekt .pin-pulse{display:none;}   /* fotomarker staat erbovenop: label zou eronder vandaan steken */
+.kplek.lbl-boven .kp-lbl{top:auto;bottom:calc(100% + 4px);}
+.kp-lijnen{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;}
+.kp-lijnen line{stroke:var(--accent);stroke-width:1.5;vector-effect:non-scaling-stroke;stroke-linecap:round;}
+.kp-lijnen line.halo{stroke:#fff;stroke-width:4;opacity:.85;}
+.kp-lijnen line.zee{stroke:var(--ocean);}
+.kp-lijnen circle{fill:var(--accent);stroke:#fff;stroke-width:1.5;vector-effect:non-scaling-stroke;}
+.kp-lijnen circle.zee{fill:var(--ocean);}
+.pin.bedekt .pin-lbl,.pin.bedekt .pin-pulse{display:none;}
+.pin.bedekt .pin-dot{width:12px;height:12px;border-width:2px;}   /* fotomarker staat erbovenop: label zou eronder vandaan steken */
 @media(max-width:720px){
   .kplek{width:32px;height:32px;border-width:2px;}
   .kplek .kp-n{min-width:19px;height:19px;font-size:.62rem;line-height:15px;right:-6px;top:-6px;}
@@ -5007,9 +5020,20 @@ function bouwKaartPlekken() {
       omslag: fotos.find(f => f.p.fav) || fotos[0]
     });
   });
-  // uit elkaar duwen tot geen twee markers elkaar raken (in px, langs de verbindingslijn)
-  const r = sw < 500 ? 16 : 22, minAf = 2 * r + 6;
-  for (let ronde = 0; ronde < 40; ronde++) {
+  // De marker staat niet óp de locatie maar ernaast, met een streepje ertussen.
+  // Beginpositie: aan de kant waar het pin-label stond; daarna uit elkaar duwen zodat geen
+  // twee markers elkaar raken en geen marker over een locatiestip (van welke bestemming ook) valt.
+  const r = sw < 500 ? 16 : 22, minAf = 2 * r + 6, afPin = r + 9, start = r + (sw < 500 ? 18 : 24);
+  const pins = [].slice.call(document.querySelectorAll('.map-stage .pin')).map(pin => ({
+    x: parseFloat(pin.style.left) / 100 * sw, y: parseFloat(pin.style.top) / 100 * sh
+  }));
+  groepen.forEach(g => {
+    const richting = g.pin.classList.contains('left') ? [-1, -.15] : g.pin.classList.contains('right') ? [1, -.1]
+                   : g.pin.classList.contains('ocean') ? [.75, .75] : [.2, 1];
+    const l = Math.hypot(richting[0], richting[1]);
+    g.x += richting[0] / l * start; g.y += richting[1] / l * start;
+  });
+  for (let ronde = 0; ronde < 60; ronde++) {
     let bewogen = false;
     for (let i = 0; i < groepen.length; i++) for (let j = i + 1; j < groepen.length; j++) {
       const a = groepen[i], b = groepen[j];
@@ -5021,8 +5045,23 @@ function bouwKaartPlekken() {
       b.x += dx / d * duw; b.y += dy / d * duw;
       bewogen = true;
     }
+    groepen.forEach(g => pins.forEach(pn => {
+      let dx = g.x - pn.x, dy = g.y - pn.y, d = Math.hypot(dx, dy);
+      if (d >= afPin) return;
+      if (d < 1) { dx = 0; dy = -1; d = 1; }
+      g.x += dx / d * (afPin - d + .5); g.y += dy / d * (afPin - d + .5);
+      bewogen = true;
+    }));
     if (!bewogen) break;
   }
+  // binnen de kaart blijven
+  groepen.forEach(g => {
+    g.x = Math.min(sw - r - 2, Math.max(r + 2, g.x));
+    g.y = Math.min(sh - r - 2, Math.max(r + 2, g.y));
+    // label aan de kant van de marker die van de stip af wijst
+    const dx = g.x - g.px / 100 * sw, dy = g.y - g.py / 100 * sh;
+    g.zijde = Math.abs(dx) > Math.abs(dy) * .9 ? (dx < 0 ? 'lbl-links' : 'lbl-rechts') : (dy < 0 ? 'lbl-boven' : '');
+  });
   groepen.forEach(g => { g.xp = g.x / sw * 100; g.yp = g.y / sh * 100; });
   return {clusters: groepen, n};
 }
@@ -5032,11 +5071,16 @@ function renderPhotoDots() {
   if (!layer) return;
   const {clusters, n} = bouwKaartPlekken();
   _kaartPlekken = clusters;
-  layer.innerHTML = clusters.map((c, ci) => {
+  const lijnen = '<svg class="kp-lijnen" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' +
+    clusters.map(c => {
+      const co = ' x1="' + c.px.toFixed(2) + '" y1="' + c.py.toFixed(2) + '" x2="' + c.xp.toFixed(2) + '" y2="' + c.yp.toFixed(2) + '"/>';
+      return '<line class="halo"' + co + '<line class="' + (c.zee ? 'zee' : '') + '"' + co;
+    }).join('') + '</svg>';
+  layer.innerHTML = lijnen + clusters.map((c, ci) => {
     const o = c.omslag.p;
     const label = c.naam + ' · ' + c.days + ' · ' + c.fotos.length + ' foto' + (c.fotos.length > 1 ? "'s" : '');
     return '<button class="kplek' + (c.zee ? ' zee' : '') + (c.zijde ? ' ' + c.zijde : '') +
-           '" style="left:' + c.xp.toFixed(2) + '%;top:' + c.yp.toFixed(2) + '%" title="' + esc(label) +
+           '" style="left:' + c.xp.toFixed(2) + '%;top:' + c.yp.toFixed(2) + '%;animation-delay:' + (ci * 70) + 'ms" title="' + esc(label) +
            '" aria-label="' + esc(label) + ' bekijken" onclick="openKaartPlek(' + ci + ')">' +
            '<img ' + imgAttr(o, 120) + ' alt="" loading="lazy" decoding="async">' +
            '<span class="kp-n">' + c.fotos.length + '</span>' +
