@@ -1683,6 +1683,86 @@ nav{position:-webkit-sticky;position:sticky;}
 .dp-loc{display:flex;align-items:center;gap:.35rem;font-size:.82rem;color:var(--muted);}
 .dp-loc svg{opacity:.6;flex-shrink:0;}
 .dp-telling{margin-left:.6rem;}
+
+/* Hoofdfoto: één grote foto bovenaan de dag met de titel erover */
+.dp-hero{
+  position:relative;overflow:hidden;border-radius:var(--r-lg);
+  height:clamp(240px,38vw,440px);background:#2A2119;color:#fff;
+  box-shadow:0 18px 44px rgba(40,28,14,.18);isolation:isolate;
+}
+.dp-hero-foto{display:block;width:100%;height:100%;padding:0;border:0;background:transparent;cursor:zoom-in;}
+.dp-hero-foto img{
+  display:block;width:100%;height:100%;object-fit:cover;object-position:center 40%;
+  animation:dpHeroIn .9s cubic-bezier(.2,.7,.2,1) both;
+}
+@keyframes dpHeroIn{from{opacity:0;transform:scale(1.06)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.dp-hero-foto img{animation:none;}}
+.dp-hero::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(to top,rgba(14,9,5,.86) 0%,rgba(14,9,5,.48) 34%,rgba(14,9,5,.06) 62%,rgba(14,9,5,.18) 100%);
+}
+.dp-hero.zonder-foto{
+  background:
+    radial-gradient(circle at 82% 18%,rgba(232,180,96,.32),transparent 44%),
+    radial-gradient(circle at 10% 90%,rgba(180,98,45,.45),transparent 50%),
+    linear-gradient(160deg,#3A2C20,#1F1813);
+  height:clamp(190px,26vw,300px);
+}
+.dp-hero.zonder-foto::after{display:none;}
+.dp-hero-tekst{
+  position:absolute;left:0;right:0;bottom:0;z-index:2;padding:clamp(1rem,3vw,1.6rem) clamp(1rem,3.2vw,1.8rem);
+  padding-right:clamp(1rem,3.2vw,1.8rem);pointer-events:none;
+}
+.dp-hero .dp-oog{margin-bottom:.5rem;}
+.dp-hero .dp-dag{
+  color:#fff;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+}
+.dp-hero .dp-dag.vandaag{background:var(--accent);border-color:transparent;}
+.dp-hero .dp-datum{color:rgba(255,255,255,.78);}
+.dp-hero .dp-titel{
+  color:#fff;font-size:clamp(1.75rem,4.2vw,2.8rem);margin:0 0 .4rem;
+  text-shadow:0 2px 18px rgba(0,0,0,.35);max-width:14em;
+}
+.dp-hero .dp-loc{color:rgba(255,255,255,.85);}
+.dp-hero .dp-loc svg{opacity:.85;}
+.dp-hero-bron{
+  position:absolute;left:14px;top:14px;z-index:2;pointer-events:none;
+  font-size:.58rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+  color:#fff;background:rgba(12,8,4,.42);padding:.22rem .55rem;border-radius:100px;
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+}
+.dp-hero-kies{
+  position:absolute;right:12px;top:12px;z-index:3;
+  display:inline-flex;align-items:center;gap:.4rem;min-height:36px;
+  padding:.4rem .8rem .4rem .65rem;border-radius:100px;cursor:pointer;
+  border:1px solid rgba(255,255,255,.32);background:rgba(20,13,7,.38);color:#fff;
+  font-family:var(--sans);font-size:.72rem;font-weight:600;letter-spacing:.02em;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  transition:background .2s,border-color .2s;
+}
+.dp-hero-kies:hover{background:rgba(20,13,7,.6);border-color:rgba(255,255,255,.6);}
+.dp-hero-kies:active{transform:scale(.97);}
+.dp-hero-kies svg{opacity:.9;}
+@media(max-width:720px){
+  .dp-hero{height:clamp(230px,66vw,360px);border-radius:16px;}
+  .dp-hero.zonder-foto{height:clamp(170px,40vw,240px);}
+  .dp-hero .dp-titel{font-size:clamp(1.55rem,7.4vw,2.1rem);}
+  .dp-hero-tekst{padding:.9rem 1rem 1rem;}
+  .dp-hero-kies span{font-size:.68rem;}
+  .dp-hero-bron{left:10px;top:10px;}
+}
+/* Kiezer */
+.hoofd-venster{max-width:560px;}
+.hoofd-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:6px;
+  max-height:min(52vh,460px);overflow:auto;-webkit-overflow-scrolling:touch;padding:2px;
+}
+.hoofd-grid .om-tegel{border-width:2.5px;}
+.hoofd-grid .om-tegel .tile-bron{left:4px;top:4px;}
+.hoofd-grid .om-geen{flex-direction:column;padding:4px;color:var(--accent);}
+.hoofd-grid .om-geen small{display:block;font-weight:500;font-size:.56rem;margin-top:.2rem;opacity:.75;color:var(--ink-2);}
+.hoofd-grid .hoofd-auto{background:var(--accent-weak);}
 .dp-voet{
   display:flex;align-items:center;justify-content:space-between;gap:.6rem;
   margin-top:2.2rem;padding-top:1.4rem;border-top:1px solid var(--line-soft);
@@ -2958,6 +3038,22 @@ body.sleepbezig{-webkit-user-select:none;user-select:none;cursor:grabbing;}
     </form>
   </div>
 </div>
+<!-- ── HOOFDFOTO VAN EEN DAG KIEZEN ── -->
+<div class="deel-backdrop weg-backdrop" id="hoofdModal" hidden role="dialog" aria-modal="true" aria-labelledby="hoofdTitel" onclick="if(event.target===this)sluitHoofd()">
+  <div class="deel-venster hoofd-venster">
+    <div class="deel-greep" aria-hidden="true"></div>
+    <button class="vb-sluit" onclick="sluitHoofd()" aria-label="Sluiten"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    <h3 class="deel-kop" id="hoofdTitel">Hoofdfoto kiezen</h3>
+    <p class="dier-meta" id="hoofdMeta"></p>
+    <div class="hoofd-grid" id="hoofdGrid"></div>
+    <p class="dier-hint" id="hoofdLeeg" hidden>Nog geen foto&#39;s op deze dag. Voeg eerst foto&#39;s toe met <strong>Foto&#39;s toevoegen</strong>; daarna kun je hier de hoofdfoto kiezen.</p>
+    <p class="dier-hint">Tik op een foto en hij staat meteen bovenaan de dag — voor iedereen. Een foto met een ster (&#9733;) is een hoogtepunt.</p>
+    <p class="dier-fout" id="hoofdFout" hidden></p>
+    <div class="deel-rij">
+      <button type="button" class="vb-link2" onclick="sluitHoofd()">Sluiten</button>
+    </div>
+  </div>
+</div>
 <!-- ── DAG DELEN ── -->
 <div class="deel-backdrop" id="deelModal" hidden role="dialog" aria-modal="true" aria-labelledby="deelTitel">
   <div class="deel-venster">
@@ -3168,11 +3264,44 @@ const DAYS = [
    title:"Vlucht naar Zanzibar", lodge:"S&amp;S Hotel, Jambiani",
    loc:"Zanzibar ✈️",
    desc:"Afscheid van de savanne, hallo tropisch paradijs! De vlucht van Arusha naar Zanzibar is inbegrepen. Optioneel: warme lunch met kookdemonstratie bij Maasai Kigelia Africana voor de vlucht."},
-  {id:"dag1117",  label:"Dag 11–17 Zanzibar",emoji:"🏖️", days:"Dag 11–17",date:"26 okt–1 nov",dotColor:"#5BA8C8",
+  // Zanzibar: sinds 25 okt 2026 zeven losse dagen (was één kaart 'dag1117').
+  // Het programma op het eiland ligt niet per dag vast; de titels hieronder zijn
+  // een indeling, de tekst is per dag aan te passen via "Beschrijving aanpassen".
+  {id:"dag11",    label:"Dag 11 — Zanzibar", emoji:"🏖️", days:"Dag 11",  date:"26 okt",    dotColor:"#5BA8C8",
    pdfImgs:[PDF_IMGS.zan_beach, PDF_IMGS.zan_resort],
-   title:"Zanzibar", lodge:"S&amp;S Hotel Jambiani &middot; Kholle House Stone Town",
-   loc:"Zanzibar",
-   desc:"Kristalhelder water, witte zandstranden, Stone Town's historische steegjes, specerijenplantages, snorkelen op koraalriffen, een zonsondergangscruise en 's avonds kampvuur op het strand. Het paradijselijke slot van de droomreis!"},
+   title:"Jambiani Beach", lodge:"S&amp;S Hotel, Jambiani",
+   loc:"Jambiani, Zanzibar",
+   desc:"Eerste volle dag op het eiland: wit zand, turquoise water en het ritme van de getijden voor de deur van het S&S Hotel. Niets moet, alles mag."},
+  {id:"dag12",    label:"Dag 12 — Zanzibar", emoji:"🤿", days:"Dag 12",  date:"27 okt",    dotColor:"#5BA8C8",
+   pdfImgs:[],
+   title:"Snorkelen op het rif", lodge:"S&amp;S Hotel, Jambiani",
+   loc:"Jambiani, Zanzibar",
+   desc:"Snorkelen boven koraalriffen in kristalhelder water, of een dagje dolfijnen spotten bij Kizimkazi. 's Avonds eten met de voeten in het zand."},
+  {id:"dag13",    label:"Dag 13 — Zanzibar", emoji:"🌿", days:"Dag 13",  date:"28 okt",    dotColor:"#5BA8C8",
+   pdfImgs:[],
+   title:"Specerijen & Jozani Forest", lodge:"S&amp;S Hotel, Jambiani",
+   loc:"Jambiani, Zanzibar",
+   desc:"Zanzibar is het specerijeneiland: ruik en proef kruidnagel, kaneel en vanille op een plantage. Of ga op zoek naar de rode colobusapen in Jozani Forest."},
+  {id:"dag14",    label:"Dag 14 — Zanzibar", emoji:"🏝️", days:"Dag 14",  date:"29 okt",    dotColor:"#5BA8C8",
+   pdfImgs:[],
+   title:"Strand & zee", lodge:"S&amp;S Hotel, Jambiani",
+   loc:"Jambiani, Zanzibar",
+   desc:"Vrije dag aan de kust: kitesurfers kijken bij Paje, een rondje naar Kuza Cave, of gewoon een hangstoel en een boek."},
+  {id:"dag15",    label:"Dag 15 — Zanzibar", emoji:"⛵", days:"Dag 15",  date:"30 okt",    dotColor:"#5BA8C8",
+   pdfImgs:[],
+   title:"Zonsondergangscruise", lodge:"S&amp;S Hotel, Jambiani",
+   loc:"Jambiani, Zanzibar",
+   desc:"Met een traditionele dhow de zee op terwijl de zon in het water zakt. Het mooiste uur van de dag."},
+  {id:"dag16",    label:"Dag 16 — Zanzibar", emoji:"🔥", days:"Dag 16",  date:"31 okt",    dotColor:"#5BA8C8",
+   pdfImgs:[],
+   title:"Kampvuur op het strand", lodge:"S&amp;S Hotel, Jambiani",
+   loc:"Jambiani, Zanzibar",
+   desc:"Laatste avond in Jambiani: kampvuur op het strand onder de sterrenhemel. Morgen naar Stone Town."},
+  {id:"dag17",    label:"Dag 17 — Stone Town",emoji:"🏛️", days:"Dag 17",  date:"1 nov",     dotColor:"#5BA8C8",
+   pdfImgs:[PDF_IMGS.zan_town],
+   title:"Stone Town", lodge:"Kholle House, Stone Town",
+   loc:"Stone Town, Zanzibar",
+   desc:"De historische steegjes van Stone Town, UNESCO-werelderfgoed: de markt, het oude fort, de Forodhani-tuinen en de haven. Overnachting in Kholle House, een paleisje uit 1860."},
   {id:"dag18",    label:"Dag 18 — Thuisreis", emoji:"🏡", days:"Dag 18",  date:"2 nov",     dotColor:"#6B4C2A",
    pdfImgs:[],
    title:"Vlucht Huiswaarts", lodge:"",
@@ -3191,6 +3320,7 @@ var spots = {};
 // Die dagen worden niet meer op opnametijd gesorteerd; nieuwe foto's komen achteraan.
 var handmatig = {};
 var dagTekst = {};   // dag-id -> zelf aangepaste beschrijving (leeg = tekst uit het reisvoorstel)
+var hoofdFoto = {};  // dag-id -> src van de gekozen hoofdfoto bovenaan de dagpagina (jsonbin: _hoofd)
 
 // Noodinfo die de reizigers zelf invullen (verzekering, reisbureau, gids, notities)
 var noodInfo = {};
@@ -3240,13 +3370,19 @@ const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN}`;
 // en de terugreis staan apart. Bin 1 houdt dag 1–9 plus spots, noodinfo enz.
 const JSONBIN_BIN2 = '6ab16404ac6210605ae6645d';
 const JSONBIN_URL2 = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN2}`;
-const BIN2_DAGEN = ['dag10', 'dag1117', 'dag18'];
+// 'dag1117' is de spiegel voor telefoons met de oude versie (zie migreerDag1117);
+// die sleutel blijft in bin 2 zolang de spiegel aanstaat.
+const ZANZIBAR_DAGEN = ['dag11', 'dag12', 'dag13', 'dag14', 'dag15', 'dag16', 'dag17'];
+const BIN2_DAGEN = ['dag10'].concat(ZANZIBAR_DAGEN, ['dag18', 'dag1117']);
 var _laatst = {1: null, 2: null};   // wat er het laatst in elke bin stond (JSON), om onnodig schrijven te voorkomen
 
 function splitsRecord(record) {
   const d1 = {}, d2 = {deel: 2};
   Object.keys(record).forEach(k => { if (BIN2_DAGEN.indexOf(k) < 0) d1[k] = record[k]; });
-  BIN2_DAGEN.forEach(k => { d2[k] = Array.isArray(record[k]) ? record[k] : []; });
+  BIN2_DAGEN.forEach(k => {
+    if (k === 'dag1117' && !Array.isArray(record[k])) return;   // spiegel alleen zolang hij aanstaat
+    d2[k] = Array.isArray(record[k]) ? record[k] : [];
+  });
   return {1: d1, 2: d2};
 }
 
@@ -3298,7 +3434,45 @@ function vulPlaats(lijst) {
 // kent dag7/dag8 niet en zou ze anders bij het bewaren weggooien). Kost
 // ±170 bytes per foto extra in bin 1; op false zetten zodra iedereen de
 // nieuwe versie heeft (een paar dagen na 22 okt).
-const DAG78_SPIEGEL = true;
+const DAG78_SPIEGEL = false;   // uit sinds 25 okt: iedereen heeft de nieuwe versie
+
+// ── Dag 11–17 (Zanzibar) was tot 25 okt 2026 één kaart ('dag1117') ──
+// Zelfde aanpak als dag 7/8: oude records worden bij het lezen op opnamedatum
+// over dag11 … dag17 verdeeld (zonder datum → dag11). De spiegel 'dag1117'
+// (alle Zanzibar-foto's samen) wordt tot DAG1117_SPIEGEL_TOT meegeschreven naar
+// bin 2, zodat een telefoon met de oude versie niets weggooit; daarna verdwijnt
+// die sleutel vanzelf bij de eerstvolgende bewaaractie.
+const DAG1117_SPIEGEL_TOT = '2026-10-28';
+function spiegel1117Aan() { try { return todayIso() < DAG1117_SPIEGEL_TOT; } catch (e) { return true; } }
+function migreerDag1117(rec) {
+  if (!rec || typeof rec !== 'object') return rec;
+  // 'nieuw' = minstens één losse dag met foto's. Lege arrays tellen niet: bin 2
+  // levert voor ontbrekende dagen altijd [] (haalBinRuw), ook na een schrijfbeurt
+  // van de oude versie die alleen dag1117 kent.
+  const heeftNieuw = ZANZIBAR_DAGEN.some(k => Array.isArray(rec[k]) && rec[k].length);
+  if (Array.isArray(rec.dag1117) && !heeftNieuw) {
+    const per = {};
+    ZANZIBAR_DAGEN.forEach(k => { per[k] = []; });
+    rec.dag1117.forEach(p => {
+      if (!p || !p.src) return;
+      const dag = p.taken ? dayForDate(p.taken) : null;
+      (per[ZANZIBAR_DAGEN.indexOf(dag) >= 0 ? dag : 'dag11']).push(p);
+    });
+    Object.assign(rec, per);
+  }
+  delete rec.dag1117;
+  if (spiegel1117Aan()) rec.dag1117 = [].concat.apply([], ZANZIBAR_DAGEN.map(k => Array.isArray(rec[k]) ? rec[k] : []));
+  ['_handmatig', '_basisUit', '_dagTekst', '_hoofd'].forEach(k => {
+    const o = rec[k];
+    if (!o || typeof o !== 'object' || !('dag1117' in o)) return;
+    if (k === '_handmatig') ZANZIBAR_DAGEN.forEach(z => { if (!(z in o)) o[z] = o.dag1117; });
+    else if (!('dag11' in o)) o.dag11 = o.dag1117;
+    delete o.dag1117;
+  });
+  return rec;
+}
+function migreerOud(rec) { migreerDag78(rec); return migreerDag1117(rec); }
+
 function migreerDag78(rec) {
   if (!rec || typeof rec !== 'object') return rec;
   const heeftNieuw = Array.isArray(rec.dag7) || Array.isArray(rec.dag8);
@@ -3343,7 +3517,7 @@ async function haalBinRuw() {
   const samen = Object.assign({}, r1);
   delete samen.deel;
   if (bin2Gebruikt) BIN2_DAGEN.forEach(k => { samen[k] = Array.isArray(r2[k]) ? r2[k] : []; });
-  migreerDag78(samen);
+  migreerOud(samen);
   // Zolang bin 2 nog leeg is, staan Zanzibar-foto's (als die er zijn) nog in bin 1:
   // die worden bij de eerstvolgende keer opslaan vanzelf naar bin 2 verhuisd.
   const delen = splitsRecord(samen);
@@ -3374,7 +3548,7 @@ function basisRecord() {
 // volgorde met onze nieuwe foto's ertussen. Lokale foto-objecten blijven
 // dezelfde objecten, zodat verwijzingen (verhaal-wachtrij) blijven kloppen.
 function samenvoegRecords(basis, online, lokaal) {
-  basis = migreerDag78(basis || {}); online = migreerDag78(online || {}); lokaal = migreerDag78(lokaal || {});
+  basis = migreerOud(basis || {}); online = migreerOud(online || {}); lokaal = migreerOud(lokaal || {});
   const uit = {};
   const tekst = v => binTekst(v === undefined ? null : v);
   DAYS.forEach(d => {
@@ -3412,7 +3586,7 @@ function samenvoegRecords(basis, online, lokaal) {
     });
     uit[id] = res;
   });
-  ['_spots', '_basisUit', '_handmatig', '_dagTekst'].forEach(k => {
+  ['_spots', '_basisUit', '_handmatig', '_dagTekst', '_hoofd'].forEach(k => {
     const b = (basis[k] && typeof basis[k] === 'object') ? basis[k] : {};
     const o = (online[k] && typeof online[k] === 'object') ? online[k] : {};
     const l = (lokaal[k] && typeof lokaal[k] === 'object') ? lokaal[k] : {};
@@ -3431,12 +3605,13 @@ function samenvoegRecords(basis, online, lokaal) {
 }
 
 function pasSamengevoegdToe(rec) {
-  migreerDag78(rec);
+  migreerOud(rec);
   handmatig = (rec._handmatig && typeof rec._handmatig === 'object') ? rec._handmatig : {};
   spots = (rec._spots && typeof rec._spots === 'object') ? rec._spots : {};
   verborgenBasis = (rec._basisUit && typeof rec._basisUit === 'object') ? rec._basisUit : {};
   noodInfo = (rec._nood && typeof rec._nood === 'object') ? rec._nood : {};
   dagTekst = (rec._dagTekst && typeof rec._dagTekst === 'object') ? rec._dagTekst : {};
+  hoofdFoto = (rec._hoofd && typeof rec._hoofd === 'object') ? rec._hoofd : {};
   DAYS.forEach(d => ververseDesc(d.id));
   koers = (rec._koers && typeof rec._koers === 'object') ? rec._koers : null;
   paklijst = Array.isArray(rec._paklijst) ? rec._paklijst : null;
@@ -3519,11 +3694,12 @@ function toonLeesfout(aan) {
 }
 
 function applyRecord(record) {
-  migreerDag78(record);
+  migreerOud(record);
   handmatig = (record._handmatig && typeof record._handmatig === 'object') ? record._handmatig : {};
   noodInfo = (record._nood && typeof record._nood === 'object') ? record._nood : {};
   if (typeof renderNood === 'function') renderNood();
   dagTekst = (record._dagTekst && typeof record._dagTekst === 'object') ? record._dagTekst : {};
+  hoofdFoto = (record._hoofd && typeof record._hoofd === 'object') ? record._hoofd : {};
   DAYS.forEach(d => ververseDesc(d.id));
   koers = (record._koers && typeof record._koers === 'object') ? record._koers : null;
   paklijst = Array.isArray(record._paklijst) ? record._paklijst : null;
@@ -3560,9 +3736,11 @@ function buildRecord() {
   record._handmatig = handmatig;
   record._nood = noodInfo;
   record._dagTekst = dagTekst;
+  record._hoofd = hoofdFoto;
   if (koers) record._koers = koers;
   if (paklijst) record._paklijst = paklijst;
   if (DAG78_SPIEGEL) record.dag78 = (photos.dag7 || []).concat(photos.dag8 || []);
+  if (spiegel1117Aan()) record.dag1117 = [].concat.apply([], ZANZIBAR_DAGEN.map(k => photos[k] || []));
   return record;
 }
 
@@ -3661,7 +3839,7 @@ const UPLOAD_GROUPS = [
   {ids:["dag5"],                      label:"Tarangire",   emoji:"🐘", days:"Dag 5"},
   {ids:["dag6","dag7","dag8"],        label:"Serengeti",   emoji:"🦁", days:"Dag 6–8"},
   {ids:["dag9"],                      label:"Ngorongoro",  emoji:"🦏", days:"Dag 9"},
-  {ids:["dag10","dag1117","dag18"],   label:"Zanzibar",    emoji:"🏖️", days:"Dag 10–17"},
+  {ids:["dag10","dag11","dag12","dag13","dag14","dag15","dag16","dag17","dag18"], label:"Zanzibar", emoji:"🏖️", days:"Dag 10–18"},
 ];
 
 const SVG = {
@@ -3697,7 +3875,10 @@ const DAY_DATES = {
   dag5:   ['2026-10-20','2026-10-20'], dag6:   ['2026-10-21','2026-10-21'],
   dag7:   ['2026-10-22','2026-10-22'], dag8:   ['2026-10-23','2026-10-23'],
   dag9:   ['2026-10-24','2026-10-24'],
-  dag10:  ['2026-10-25','2026-10-25'], dag1117:['2026-10-26','2026-11-01'],
+  dag10:  ['2026-10-25','2026-10-25'], dag11:  ['2026-10-26','2026-10-26'],
+  dag12:  ['2026-10-27','2026-10-27'], dag13:  ['2026-10-28','2026-10-28'],
+  dag14:  ['2026-10-29','2026-10-29'], dag15:  ['2026-10-30','2026-10-30'],
+  dag16:  ['2026-10-31','2026-10-31'], dag17:  ['2026-11-01','2026-11-01'],
   dag18:  ['2026-11-02','2026-11-02']
 };
 const DAY_ORDER = Object.keys(DAY_DATES);
@@ -3856,7 +4037,9 @@ const WEER_PLEK = {
   dag1:[-3.37,36.68,'Arusha'], dag2:[-3.37,36.68,'Arusha'], dag3:[-3.25,36.85,'Arusha NP'],
   dag4:[-3.37,36.68,'Arusha'], dag5:[-4.00,36.03,'Tarangire'], dag6:[-2.33,34.83,'Serengeti'],
   dag7:[-2.33,34.83,'Serengeti'], dag8:[-2.33,34.83,'Serengeti'], dag9:[-3.17,35.58,'Ngorongoro'], dag10:[-6.16,39.19,'Zanzibar'],
-  dag1117:[-6.31,39.54,'Zanzibar'], dag18:[-6.82,39.28,'Dar es Salaam']
+  dag11:[-6.31,39.54,'Jambiani'], dag12:[-6.31,39.54,'Jambiani'], dag13:[-6.31,39.54,'Jambiani'],
+  dag14:[-6.31,39.54,'Jambiani'], dag15:[-6.31,39.54,'Jambiani'], dag16:[-6.31,39.54,'Jambiani'],
+  dag17:[-6.16,39.19,'Stone Town'], dag18:[-6.82,39.28,'Dar es Salaam']
 };
 const WEER_CODES = {
   0:'onbewolkt', 1:'vrijwel onbewolkt', 2:'half bewolkt', 3:'bewolkt',
@@ -4306,6 +4489,7 @@ function wachtrijHerstel() {
   const geraakt = new Set();
   a.forEach(x => {
     if (x && x.id === 'dag78' && x.rec) x.id = (x.rec.taken && dayForDate(x.rec.taken) === 'dag8') ? 'dag8' : 'dag7';
+    if (x && x.id === 'dag1117' && x.rec) { const z = x.rec.taken ? dayForDate(x.rec.taken) : null; x.id = ZANZIBAR_DAGEN.indexOf(z) >= 0 ? z : 'dag11'; }
     if (!x || !x.rec || !x.rec.src || !DAYS.some(d => d.id === x.id)) return;
     if (!photos[x.id]) photos[x.id] = [];
     if (photos[x.id].some(p => p.src === x.rec.src)) return;   // staat er al: bewaard
@@ -5988,10 +6172,8 @@ document.addEventListener('click', e => {
 
 // ── TIMELINE RENDER ──
 function dagThumb(d) {
-  const eigen = (photos[d.id] || [])[0];
-  const basis = basisFotos(d.id)[0];
-  const src = eigen ? eigen.src : (basis ? basis.src : null);
-  return src ? `<img ${imgAttr(eigen || basis, 200)} alt="" loading="lazy" decoding="async">` : "";
+  const h = hoofdFotoVan(d.id);   // de miniatuur volgt de hoofdfoto van de dag
+  return h ? `<img ${imgAttr(h.p, 200)} alt="" loading="lazy" decoding="async">` : "";
 }
 
 function dagTelling(d) {
@@ -6145,7 +6327,7 @@ const STAYS = {
     ]
   },
   kholle: {
-    dagen: "Dag 17", dagId: "dag1117",
+    dagen: "Dag 17", dagId: "dag17",
     nachten: "1 nacht", periode: "1 nov",
     naam: "Kholle House",
     soort: "Boutiquehotel",
@@ -6239,8 +6421,13 @@ const VERBLIJF_PER_DAG = {
   dag8:    [{s:"mgunga",  n:"nacht 3 van 3",     d:"23 okt"}],
   dag9:    [{s:"manyara", n:"1 nacht",           d:"24 okt"}],
   dag10:   [{s:"ss",      n:"nacht 1 van 7",     d:"25 okt"}],
-  dag1117: [{s:"ss",      n:"nacht 2 t/m 7",     d:"26–31 okt"},
-            {s:"kholle",  n:"1 nacht",           d:"1 nov"}],
+  dag11:   [{s:"ss",      n:"nacht 2 van 7",     d:"26 okt"}],
+  dag12:   [{s:"ss",      n:"nacht 3 van 7",     d:"27 okt"}],
+  dag13:   [{s:"ss",      n:"nacht 4 van 7",     d:"28 okt"}],
+  dag14:   [{s:"ss",      n:"nacht 5 van 7",     d:"29 okt"}],
+  dag15:   [{s:"ss",      n:"nacht 6 van 7",     d:"30 okt"}],
+  dag16:   [{s:"ss",      n:"nacht 7 van 7",     d:"31 okt"}],
+  dag17:   [{s:"kholle",  n:"1 nacht",           d:"1 nov"}],
   dag18:   []
 };
 
@@ -6534,24 +6721,151 @@ function naarBovenkantInhoud(direct) {
   window.scrollTo({top: Math.max(0, y), behavior: direct ? 'auto' : 'smooth'});
 }
 
+/* ── Hoofdfoto bovenaan de dagpagina ──
+   Elke dag opent met één grote foto met de dagtitel erover. Gekozen foto per
+   dag in hoofdFoto[id] (jsonbin _hoofd, dus voor iedereen gelijk); zonder keuze
+   het eerste hoogtepunt, anders de eerste foto, anders het reisvoorstel-plaatje.
+   Kiezen/wijzigen kan via de knop op de foto (wachtwoord). */
+function hoofdFotoVan(id) {
+  const eigen = photos[id] || [];
+  const basis = basisFotos(id);
+  const wil = hoofdFoto[id];
+  if (wil) {
+    const e = eigen.find(p => p.src === wil);
+    if (e) return {p: e, src: e.src, isPdf: false, gekozen: true};
+    const b = basis.find(x => x.src === wil);
+    if (b) return {p: b.src, src: b.src, isPdf: true, gekozen: true};
+  }
+  const fav = eigen.find(p => p.fav);
+  if (fav) return {p: fav, src: fav.src, isPdf: false, gekozen: false};
+  if (eigen[0]) return {p: eigen[0], src: eigen[0].src, isPdf: false, gekozen: false};
+  if (basis[0]) return {p: basis[0].src, src: basis[0].src, isPdf: true, gekozen: false};
+  return null;
+}
+const HOOFD_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 16 5-5 4 4 3-3 6 6"/><circle cx="16" cy="9" r="1.6"/></svg>';
+
 function dpKopHtml(d) {
   const vandaag = currentDayId() === d.id;
   const n = (photos[d.id] || []).length + basisFotos(d.id).length;
-  return '<div class="dp-oog">' +
+  const h = hoofdFotoVan(d.id);
+  const tekst = '<div class="dp-hero-tekst">' +
+    '<div class="dp-oog">' +
       '<span class="dp-dag' + (vandaag ? ' vandaag' : '') + '">' + esc(d.days) + (vandaag ? ' · vandaag' : '') + '</span>' +
       '<span class="dp-datum">' + esc(d.date) + '</span>' +
     '</div>' +
     '<h2 class="dp-titel">' + esc(d.title) + '</h2>' +
     '<p class="dp-loc">' + SVG.pin + '<span>' + esc(d.loc) + '</span>' +
       (n ? '<span class="dp-telling">· ' + n + ' foto' + (n > 1 ? '&#39;s' : '') + '</span>' : '') +
-    '</p>';
+    '</p></div>';
+  const kies = '<button type="button" class="dp-hero-kies" onclick="kiesHoofdFoto(\'' + d.id + '\')" title="Welke foto staat bovenaan deze dag?">' +
+    HOOFD_SVG + '<span>' + (h ? 'Hoofdfoto' : 'Hoofdfoto kiezen') + '</span></button>';
+  if (!h) {
+    return '<div class="dp-hero zonder-foto" data-src="">' + tekst + kies + '</div>';
+  }
+  return '<div class="dp-hero' + (h.isPdf ? ' basis' : '') + '" data-src="' + esc(h.src) + '">' +
+    '<button type="button" class="dp-hero-foto" onclick="hoofdFotoGroot(\'' + d.id + '\')" aria-label="Hoofdfoto groot bekijken">' +
+      '<img ' + imgAttr(h.p, 1200) + ' alt="" decoding="async" fetchpriority="high">' +
+    '</button>' +
+    (h.isPdf ? '<span class="dp-hero-bron">Uit het reisvoorstel</span>' : '') +
+    tekst + kies + '</div>';
 }
 
 function ververseDagKop() {
   if (!_dagOpen) return;
   const d = DAYS.find(x => x.id === _dagOpen);
   const kop = document.getElementById('dpKop');
-  if (d && kop) kop.innerHTML = dpKopHtml(d);
+  if (!d || !kop) return;
+  // Zelfde foto? Dan alleen de tekst verversen, zodat de foto niet opnieuw
+  // laadt en de inzoom-animatie niet nog eens afspeelt.
+  const oud = kop.querySelector('.dp-hero'), h = hoofdFotoVan(d.id);
+  if (oud && (oud.dataset.src || '') === (h ? h.src : '')) {
+    const t = oud.querySelector('.dp-hero-tekst');
+    const tmp = document.createElement('div'); tmp.innerHTML = dpKopHtml(d);
+    const nt = tmp.querySelector('.dp-hero-tekst');
+    if (t && nt) t.innerHTML = nt.innerHTML;
+    return;
+  }
+  kop.innerHTML = dpKopHtml(d);
+}
+
+function hoofdFotoGroot(id) {
+  const h = hoofdFotoVan(id);
+  const lijst = _slides[id] || [];
+  if (!h) return;
+  const i = lijst.findIndex(s => s.src === h.src);
+  if (i >= 0) openLightbox(id, i);
+}
+
+// Kiezer: alle foto's van de dag als tegels; tik = meteen bewaren (wachtwoord).
+var _hoofdDag = null, _hoofdBezig = false;
+function kiesHoofdFoto(id) {
+  const d = DAYS.find(x => x.id === id);
+  const m = document.getElementById('hoofdModal');
+  if (!d || !m) return;
+  _hoofdDag = id;
+  const nu = hoofdFotoVan(id);
+  const eigen = photos[id] || [];
+  const basis = basisFotos(id);
+  document.getElementById('hoofdTitel').textContent = 'Hoofdfoto van ' + d.days;
+  document.getElementById('hoofdMeta').textContent = d.date + ' · ' + d.title + ' · deze foto staat groot bovenaan de dag';
+  const auto = '<button type="button" class="om-tegel hoofd-auto' + (!hoofdFoto[id] ? ' gekozen' : '') + '" onclick="hoofdKies(null)" title="Vanzelf: het eerste hoogtepunt, anders de eerste foto">' +
+    '<span class="om-geen">Vanzelf<br><small>eerste ster of eerste foto</small></span></button>';
+  const tegels = eigen.map((p, i) =>
+    '<button type="button" class="om-tegel' + (hoofdFoto[id] === p.src ? ' gekozen' : '') + '" onclick="hoofdKies(' + i + ')" title="' + esc([p.place, fmtTaken(p.taken)].filter(Boolean).join(' · ')) + '">' +
+      '<img ' + imgAttr(p, 240) + ' alt="" loading="lazy" decoding="async">' + (p.fav ? '<span class="blad-ster">&#9733;</span>' : '') + '</button>'
+  ).concat(basis.map((b, i) =>
+    '<button type="button" class="om-tegel" onclick="hoofdKiesBasis(' + i + ')" title="Uit het reisvoorstel"' + (hoofdFoto[id] === b.src ? ' data-gekozen="1"' : '') + '>' +
+      '<img ' + imgAttr(b.src, 240) + ' alt="" loading="lazy" decoding="async"><span class="tile-bron">Reisvoorstel</span></button>'
+  )).join('');
+  document.getElementById('hoofdGrid').innerHTML = auto + tegels;
+  document.querySelectorAll('#hoofdGrid [data-gekozen]').forEach(t => t.classList.add('gekozen'));
+  document.getElementById('hoofdLeeg').hidden = !!(eigen.length || basis.length);
+  hoofdFout('');
+  m.hidden = false;
+}
+function sluitHoofd() {
+  const m = document.getElementById('hoofdModal');
+  if (m) m.hidden = true;
+  _hoofdDag = null; _hoofdBezig = false;
+}
+function hoofdFout(t) {
+  const f = document.getElementById('hoofdFout');
+  if (f) { f.textContent = t || ''; f.hidden = !t; }
+}
+document.addEventListener('keydown', e => {
+  const m = document.getElementById('hoofdModal');
+  if (m && !m.hidden && e.key === 'Escape') { e.stopPropagation(); sluitHoofd(); }
+}, true);
+function hoofdKies(i) {
+  const id = _hoofdDag; if (!id) return;
+  const p = i === null ? null : (photos[id] || [])[i];
+  return hoofdBewaar(id, p ? p.src : null);
+}
+function hoofdKiesBasis(i) {
+  const id = _hoofdDag; if (!id) return;
+  const b = basisFotos(id)[i];
+  return hoofdBewaar(id, b ? b.src : null);
+}
+async function hoofdBewaar(id, src) {
+  if (_hoofdBezig) return;
+  const oud = hoofdFoto[id];
+  if ((src || null) === (oud || null)) { sluitHoofd(); return; }
+  _hoofdBezig = true;
+  try {
+    if (!await ensureUnlocked('Wachtwoord om de hoofdfoto te kiezen:')) return;
+    if (src) hoofdFoto[id] = src; else delete hoofdFoto[id];
+    ververseDagKop(); renderTimelineThumb(id);
+    try {
+      await savePhotosToCloud();
+    } catch (e) {
+      if (oud === undefined) delete hoofdFoto[id]; else hoofdFoto[id] = oud;
+      ververseDagKop(); renderTimelineThumb(id);
+      hoofdFout('Opslaan mislukt — probeer het nog eens.');
+      return;
+    }
+    sluitHoofd();
+    toonVolgordeMelding(src ? '✓ Hoofdfoto bewaard' : 'Hoofdfoto wordt weer vanzelf gekozen');
+  } finally { _hoofdBezig = false; }
 }
 
 function openDagPagina(id, stil) {
@@ -7734,8 +8048,7 @@ function deelBericht(d) {
   const n = (photos[d.id] || []).length;
   const verhalen = deelVerhalen(d.id);
   const dieren = deelDieren(d.id);
-  const week = d.id === 'dag1117';
-  const maxV = week ? 6 : 3;
+  const maxV = 3;
   const r = [];
   r.push((d.emoji ? d.emoji + ' ' : '') + '*' + d.days + ' — ' + d.title + '*');
   r.push('📅 ' + d.date + '  ·  📍 ' + d.loc);
@@ -7806,12 +8119,10 @@ function toonDeel(id) {
   const d = DAYS.find(x => x.id === id);
   if (!d) return;
   _deelDag = d;
-  const week = id === 'dag1117';
-  deelOpen('dag', dagUrl(id), week ? 'Week delen' : 'Dag delen');
+  deelOpen('dag', dagUrl(id), 'Dag delen');
   const n = (photos[id] || []).length;
-  const eigen = (photos[id] || [])[0];
-  const basis = (typeof basisFotos === 'function' ? basisFotos(id) : [])[0];
-  const src = eigen ? eigen.src : (basis ? basis.src : null);
+  const h = hoofdFotoVan(id);
+  const src = h ? h.src : null;
   document.getElementById('deelKaart').innerHTML = deelKaartHtml(src, d.emoji, esc(d.days), esc(d.date), esc(d.title),
     SVG.pin + '<span>' + esc(d.loc) + '</span>' + (n ? '<span>&middot; ' + n + ' foto' + (n > 1 ? '&#39;s' : '') + '</span>' : ''));
   _deelOpties.programma = deelVerhalen(id).length === 0;
@@ -7972,7 +8283,7 @@ function deelKnopBijwerken() {
   if (metFoto) hint.innerHTML = 'Kies WhatsApp in het deelmenu dat opent. De tekst wordt ook gekopieerd &mdash; plak hem erbij als de foto zonder tekst aankomt.';
   else if (_deel.mode === 'foto') hint.textContent = 'De link opent de site direct bij deze foto.';
   else if (_deel.mode === 'reis') hint.textContent = 'De link opent het hele reisdagboek.';
-  else hint.textContent = 'De link opent de site direct bij deze ' + (_deelDag && _deelDag.id === 'dag1117' ? 'week' : 'dag') + ' — ook op een telefoon zonder de app.';
+  else hint.textContent = 'De link opent de site direct bij deze ' + 'dag' + ' — ook op een telefoon zonder de app.';
 }
 
 // ── tekst ──
@@ -8112,11 +8423,13 @@ document.addEventListener('click', e => {
 });
 
 // link naar een dag: #d=dag5
+// Oude dag-id's van vóór de splitsingen (dag78 → dag7, dag1117 → dag11)
+function oudDagId(id) { return id === 'dag78' ? 'dag7' : (id === 'dag1117' ? 'dag11' : id); }
 var _dagLinkGedaan = false;
 function openDagFromHash() {
   const m = /^#d=([A-Za-z0-9]+)$/.exec(location.hash || '');
   if (!m || _dagLinkGedaan) return false;
-  const id = m[1] === 'dag78' ? 'dag7' : m[1];   // oude links van vóór de splitsing
+  const id = oudDagId(m[1]);   // oude links van vóór de splitsingen
   if (!DAYS.some(d => d.id === id)) return false;
   _dagLinkGedaan = true;
   toonTab('route', true);
@@ -10636,10 +10949,11 @@ async function importData(ev) {
     const tekst = await file.text();
     const record = JSON.parse(tekst);
     if (!record || typeof record !== 'object') throw new Error('vorm');
-    migreerDag78(record);
+    migreerOud(record);
     DAYS.forEach(d => { photos[d.id] = Array.isArray(record[d.id]) ? record[d.id] : []; });
     spots = (record._spots && typeof record._spots === 'object') ? record._spots : {};
     handmatig = (record._handmatig && typeof record._handmatig === 'object') ? record._handmatig : {};
+    hoofdFoto = (record._hoofd && typeof record._hoofd === 'object') ? record._hoofd : {};
     DAYS.forEach(d => { sortByTaken(d.id); renderCarousel(d.id); updateCount(d.id); });
     renderSpots(); renderFavs(); renderCollages(); renderCijfers(); renderPhotoDots();
     await savePhotosToCloud();
@@ -10653,7 +10967,7 @@ function lokaleKopie() {
     const raw = localStorage.getItem('tz_kopie');
     if (!raw) return null;
     const o = JSON.parse(raw);
-    if (o && o.record) migreerDag78(o.record);
+    if (o && o.record) migreerOud(o.record);
     return (o && o.record) ? o : null;
   } catch(e) { return null; }
 }
@@ -10709,7 +11023,7 @@ function openFromHash() {
   if (openDagFromHash()) return;
   const m = /^#f=([A-Za-z0-9]+)-(\d+)$/.exec(location.hash || '');
   if (!m) return;
-  const id = m[1] === 'dag78' ? 'dag7' : m[1];   // oude links van vóór de splitsing
+  const id = oudDagId(m[1]);   // oude links van vóór de splitsingen
   const lijst = _slides[id];
   if (!lijst || !lijst.length) return;
   toonTab('album', true);
