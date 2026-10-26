@@ -5395,8 +5395,9 @@ function refreshLightbox() {
   if (deelKnop) deelKnop.hidden = !!img.isPdf || isSpot;
   const dagKnop = document.getElementById('lbDag');
   if (dagKnop) dagKnop.hidden = !!img.isPdf || isSpot;
+  // 'Andere foto kiezen' alleen ingelogd — anders zie je als bezoeker alleen de foto
   const vervKnop = document.getElementById('lbVervang');
-  if (vervKnop) vervKnop.hidden = !isSpot;
+  if (vervKnop) vervKnop.hidden = !isSpot || !_keys;
   if (typeof ververseDuim === 'function') ververseDuim(img);
   if (!isSpot) zetHash('f=' + _lb.id + '-' + _lb.i);
   const meer = list.length > 1 || (!!_lbGroep && _lbGroep.indexOf(_lb.id) >= 0);
@@ -7578,6 +7579,9 @@ function nieuwDier() {
 // Spotvenster voor een gespot dier (tik op de naam).
 function bewerkSpot(id) {
   if (!spots[id]) return;
+  // Niet ingelogd en er is een foto: alleen de foto laten zien, geen bewerk-venster
+  // (naam aanpassen, andere foto, weghalen) — dat is verwarrend voor wie alleen kijkt.
+  if (!_keys && spots[id].src) { openSpotLightbox(id); return; }
   if (!openDierVenster(id)) vraagSpotWeg(id);
 }
 function bewerkDier(id) { bewerkSpot(id); }
