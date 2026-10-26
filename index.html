@@ -2611,7 +2611,7 @@ body.sleepbezig{-webkit-user-select:none;user-select:none;cursor:grabbing;}
     <div class="sec-head reveal">
       <p class="sec-label">Het complete fotoalbum</p>
       <h2 class="sec-title">Alles bij elkaar,<br>overnachting na overnachting</h2>
-      <p class="sec-sub">Alle foto&#39;s van de reis als een album om doorheen te scrollen. Tik op een foto om hem groot te zien. <strong>Heel album als PDF</strong> maakt er een echt fotoboek van: per bestemming een hoofdstuk met de kaart en de overnachting, per dag de beschrijving, een tijdbalkje en de foto&#39;s met jullie verhalen &mdash; hoogtepunten en foto&#39;s met duimpjes staan groot. Of download alle foto&#39;s in volle grootte als zip.</p>
+      <p class="sec-sub">Alle foto&#39;s van de reis als een album om doorheen te scrollen. Tik op een foto om hem groot te zien. <strong>Heel album als PDF</strong> maakt er een echt fotoboek van: per bestemming een hoofdstuk met de kaart en de overnachting, per dag de beschrijving, een tijdbalkje en de foto&#39;s met jullie verhalen &mdash; hoogtepunten en foto&#39;s met duimpjes staan groot en geen foto wordt bijgesneden. Of download alle foto&#39;s in volle grootte als zip.</p>
     </div>
     <div class="boek-balk reveal">
       <span class="boek-info" id="boekInfo"></span>
@@ -3134,8 +3134,8 @@ body.sleepbezig{-webkit-user-select:none;user-select:none;cursor:grabbing;}
       </div>
       <div class="om-optie"><span>Opmaak</span>
         <div class="om-keuze" id="pdfMax" role="radiogroup" aria-label="Opmaak van de fotopagina&#39;s">
-          <button type="button" data-v="16" onclick="pdfOptie('max',16)">Compact<small>4 foto&#39;s per rij</small></button>
-          <button type="button" data-v="8" onclick="pdfOptie('max',8)">Ruim<small>3 foto&#39;s per rij, meer pagina&#39;s</small></button>
+          <button type="button" data-v="16" onclick="pdfOptie('max',16)">Compact<small>&plusmn;4 foto&#39;s per rij</small></button>
+          <button type="button" data-v="8" onclick="pdfOptie('max',8)">Ruim<small>&plusmn;3 foto&#39;s per rij, meer pagina&#39;s</small></button>
         </div>
       </div>
     </div>
@@ -8552,6 +8552,22 @@ function cgCover(ctx, img, x, y, w, h, straal) {
   ctx.restore();
 }
 
+// Foto passend (zonder bijsnijden) in een vak tekenen. uitlijn: 'midden' (standaard), 'links' (linksboven) of 'boven' (gecentreerd, bovenaan).
+// Geeft het getekende rechthoekje terug.
+function cgPas(ctx, img, x, y, w, h, straal, uitlijn) {
+  const sch = Math.min(w / img.naturalWidth, h / img.naturalHeight);
+  const dw = img.naturalWidth * sch, dh = img.naturalHeight * sch;
+  const dx = uitlijn === 'links' ? x : x + (w - dw) / 2;
+  const dy = (uitlijn === 'links' || uitlijn === 'boven') ? y : y + (h - dh) / 2;
+  ctx.save();
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(dx, dy, dw, dh, straal || 0); else ctx.rect(dx, dy, dw, dh);
+  ctx.clip();
+  ctx.drawImage(img, dx, dy, dw, dh);
+  ctx.restore();
+  return {x: dx, y: dy, w: dw, h: dh};
+}
+
 function cgQR(ctx, tekst, x, y, formaat) {
   let mat;
   try { mat = qrMatrix(tekst); } catch (e) { return; }
@@ -8952,13 +8968,14 @@ async function tekenOmslagPdf(tot, plekken, foto) {
   let im = null;
   if (foto && foto.src) { try { im = await cgLaad(foto.src); } catch (e) { im = null; } }
   if (im) {
-    // gekozen foto bovenin, loopt onderaan zacht over in het donker boven 'FOTOALBUM'
+    // gekozen foto bovenin — heel, niet bijgesneden (een staande foto staat gecentreerd op het donker) —
+    // en loopt onderaan zacht over in het donker boven 'FOTOALBUM'
     const fh = 1000;
-    cgCover(ctx, im, 0, 0, PB, fh, 0);
+    const r = cgPas(ctx, im, 0, 0, PB, fh, 0, 'boven');
     im.src = '';
-    const g = ctx.createLinearGradient(0, fh - 300, 0, fh);
+    const g = ctx.createLinearGradient(0, Math.min(fh, r.y + r.h) - 300, 0, Math.min(fh, r.y + r.h));
     g.addColorStop(0, 'rgba(42,33,25,0)'); g.addColorStop(1, 'rgba(42,33,25,1)');
-    ctx.fillStyle = g; ctx.fillRect(0, fh - 300, PB, 300);
+    ctx.fillStyle = g; ctx.fillRect(0, Math.min(fh, r.y + r.h) - 300, PB, 300);
   } else {
     [[.34, .30], [.24, .48], [.12, .66]].forEach(([a, r]) => {
       ctx.fillStyle = 'rgba(208,139,69,' + (a * .5) + ')';
@@ -9233,10 +9250,62 @@ function pdfEyebrow(ctx, tekst, x, y, kleur) {
   ctx.fillStyle = kleur || PDF_K.accent; ctx.fillRect(x, y - 8, 44, 3);
   ctx.font = pf(600, 19); ctx.fillText(pdfSpatie(tekst), x + 60, y);
 }
-function pdfFoto(ctx, im, x, y, w, h, straal) {
+// Een foto heel in het vak tekenen: nooit bijgesneden, de foto wordt passend geschaald.
+// uitlijn: 'links' (linksboven) of 'midden' (gecentreerd). Geeft het getekende rechthoekje terug.
+function pdfFoto(ctx, im, x, y, w, h, straal, uitlijn) {
+  if (im) { try { return cgPas(ctx, im, x, y, w, h, straal || 0, uitlijn || 'links'); } catch (e) {} }
   ctx.fillStyle = '#EFE9DF';
   ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, y, w, h, straal || 0); else ctx.rect(x, y, w, h); ctx.fill();
-  if (im) { try { cgCover(ctx, im, x, y, w, h, straal || 0); } catch (e) {} }
+  return {x: x, y: y, w: w, h: h};
+}
+
+// ── verhoudingen van de foto's (breedte ÷ hoogte), nodig om zonder bijsnijden te kunnen indelen ──
+var _pdfAr = {};
+function pdfAr(f) { const a = _pdfAr[f.p.src]; return (a && isFinite(a)) ? a : 1.5; }
+async function pdfMeet(fotos, melden) {
+  const todo = fotos.filter(f => !_pdfAr[f.p.src]);
+  let klaar = 0, i = 0;
+  const meet = async () => {
+    while (i < todo.length) {
+      const f = todo[i++];
+      // eerst het kleine plaatje (snel), lukt dat niet dan het origineel
+      let im = await cgLaad(kleinUrl(f.p, 200));
+      if (!im || !im.naturalWidth) im = await cgLaad(f.p.src);
+      if (im && im.naturalWidth && im.naturalHeight) _pdfAr[f.p.src] = im.naturalWidth / im.naturalHeight;
+      if (im) im.src = '';
+      klaar++;
+      if (melden) melden('Foto’s meten ' + klaar + '/' + todo.length);
+    }
+  };
+  await Promise.all([0, 1, 2, 3, 4, 5].map(meet));
+}
+
+// Foto's in rijen verdelen, elke foto op zijn eigen verhouding (zoals Google Foto's): de rij wordt
+// precies zo hoog dat de foto's samen de volle breedte vullen. De doelhoogte wisselt per rij
+// (doelen[]), zodat de pagina's een speels ritme krijgen. Een laatste, onvolle rij wordt niet uitgerekt.
+function pdfRijen(fotos, breedte, gap, doelen, maxH) {
+  const rijen = [];
+  const hoogte = r => (breedte - gap * (r.length - 1)) / r.reduce((s, f) => s + pdfAr(f), 0);
+  let rij = [];
+  fotos.forEach(f => {
+    const doel = doelen[rijen.length % doelen.length];
+    rij.push(f);
+    const h = hoogte(rij);
+    if (h > doel) return;                       // past nog niet vol: volgende foto erbij
+    if (rij.length > 1) {
+      const zonder = rij.slice(0, -1), h2 = hoogte(zonder);
+      if (Math.abs(h2 - doel) < Math.abs(h - doel) && h2 <= maxH) { rijen.push({fotos: zonder, h: h2, vol: true}); rij = [f]; return; }
+    }
+    rijen.push({fotos: rij, h: h, vol: true}); rij = [];
+  });
+  if (rij.length) {
+    const vorige = rijen[rijen.length - 1], minH = Math.min.apply(null, doelen) * .8;
+    // één foto over? dan liever bij de vorige rij, als die daardoor niet te laag wordt
+    if (rij.length === 1 && vorige && hoogte(vorige.fotos.concat(rij)) >= minH) { vorige.fotos.push(rij[0]); vorige.h = hoogte(vorige.fotos); }
+    else rijen.push({fotos: rij, h: Math.min(hoogte(rij), maxH, vorige ? vorige.h * 1.3 : maxH), vol: false});
+  }
+  rijen.forEach(r => { r.h = Math.round(r.h); r.fotos.forEach(f => { f.w = Math.round(pdfAr(f) * r.h); f.rh = r.h; }); });
+  return rijen;
 }
 
 
@@ -9313,14 +9382,39 @@ function pdfVerblijven(ids) {
   ids.forEach(id => (VERBLIJF_PER_DAG[id] || []).forEach(v => { if (uit.indexOf(v.s) < 0 && STAYS[v.s]) uit.push(v.s); }));
   return uit;
 }
-function albumPlan(opties) {
+// Een uitgelichte foto (hoogtepunt of veel duimpjes) krijgt een eigen blok, heel en op zijn eigen verhouding:
+//  'vol'   zonder verhaal: zo breed mogelijk (een staande foto gecentreerd);
+//  'onder' liggend met verhaal: de foto over de volle breedte, het verhaal eronder;
+//  'naast' staand met verhaal: de foto links, het verhaal ernaast.
+function pdfUitBlok(meet, f, gw) {
+  const ar = pdfAr(f), verhaal = (f.p.caption || '').trim(), staand = ar < 0.98;
+  let b = {type: 'uit', f: f, th: 0, regels: 0};
+  if (!verhaal) {
+    b.variant = 'vol'; b.ih = Math.min(staand ? 640 : 760, Math.round(gw / ar)); b.iw = Math.round(b.ih * ar);
+  } else if (!staand) {
+    b.variant = 'onder'; b.ih = Math.min(600, Math.round(gw / ar)); b.iw = Math.round(b.ih * ar);
+    b.regels = Math.min(6, pdfTekstRegels(meet, verhaal, gw, pf(400, 22))); b.th = b.regels * 32 + 44;
+  } else {
+    b.variant = 'naast'; b.ih = 720; b.iw = Math.round(b.ih * ar);
+  }
+  b.h = b.h0 = b.ih + b.th;
+  b.min = Math.min(b.h, 440 + b.th);   // past ingekort nog onderaan een pagina
+  return b;
+}
+
+async function albumPlan(opties, melden) {
   const meet = document.createElement('canvas').getContext('2d');
   const gw = PB - 2 * PM;
-  const cols = opties.max === 8 ? 3 : 4, gap = 14;
-  const cw = (gw - gap * (cols - 1)) / cols, chh = Math.round(cw / 1.45);
-  const CAP = 24, UIT_H = 620, ONDER = PH - 130;
+  const ruim = opties.max === 8, gap = 14;
+  // doelhoogte per rij wisselt: zo krijgt elke pagina een eigen ritme van bredere en smallere rijen
+  const basis = ruim ? 250 : 190, doelen = [1, 1.35, .85, 1.15, 1, .9].map(x => Math.round(basis * x)), maxH = ruim ? 430 : 330;
+  const CAP = 24, ONDER = PH - 130;
   const pag = [{type: 'omslag'}, {type: 'overzicht'}];
   const geliefd = [];
+  // eerst alle foto's meten (verhouding), anders is zonder bijsnijden niet te plannen
+  const allesLos = [];
+  DAYS.forEach(d => (photos[d.id] || []).forEach(p => allesLos.push({p: p})));
+  await pdfMeet(allesLos, melden);
   UPLOAD_GROUPS.forEach((g, gi) => {
     const dagen = g.ids.map(id => DAYS.find(d => d.id === id)).filter(d => d && (photos[d.id] || []).length);
     if (!dagen.length) return;
@@ -9334,26 +9428,25 @@ function albumPlan(opties) {
       // uitgelicht: elk hoogtepunt (★), plus de drie foto's met de meeste duimpjes
       const topDuim = fotos.filter(f => f.duim > 0 && !f.p.fav).sort((a, b) => b.duim - a.duim).slice(0, 3);
       fotos.forEach(f => { f.uit = !!f.p.fav || topDuim.indexOf(f) >= 0; if (f.duim > 0) geliefd.push(f); });
-      const blokken = [];
-      let rij = null;
-      // de rij komt in de lijst zodra de eerste foto erin gaat (dus vóór een uitgelichte foto die erna komt)
-      const sluitRij = () => {
-        if (!rij) return;
-        const capL = Math.max.apply(null, rij.fotos.map(f => f.capRegels)), meta = rij.fotos.some(f => f.metaRegel);
-        rij.h = chh + ((capL || meta) ? 14 + (meta ? 22 : 0) + capL * CAP : 0); rij.meta = meta;
-        rij = null;
-      };
-      // Een uitgelichte foto onderbreekt de rij niet: de rij loopt erna gewoon vol
-      // (anders blijven er overal rijtjes van één foto over).
-      fotos.forEach(f => {
-        if (f.uit) { blokken.push({type: 'uit', f: f, h: UIT_H, min: 440}); return; }
-        f.capRegels = f.p.caption ? Math.min(3, pdfTekstRegels(meet, f.p.caption, cw, pf(400, 18))) : 0;
-        f.metaRegel = !!(f.p.taken || f.p.place);
-        if (!rij) { rij = {type: 'rij', fotos: [], h: chh, cw: cw, chh: chh, gap: gap, cols: cols, meta: false}; blokken.push(rij); }
-        rij.fotos.push(f);
-        if (rij.fotos.length === cols) sluitRij();
+      // De gewone foto's worden in rijen verdeeld, elk op zijn eigen verhouding. Een uitgelichte foto
+      // onderbreekt de rij niet (anders blijven er overal rijtjes van één foto over): de rij komt in de
+      // lijst zodra de eerste foto erin gaat, een uitgelicht blok op de plek waar die foto valt.
+      const rijen = pdfRijen(fotos.filter(f => !f.uit), gw, gap, doelen, maxH).map(r => {
+        r.fotos.forEach(f => {
+          f.capRegels = f.p.caption ? Math.min(f.w < 190 ? 4 : 3, pdfTekstRegels(meet, f.p.caption, f.w, pf(400, 18))) : 0;
+          f.metaRegel = !!(f.p.taken || f.p.place);
+        });
+        const capL = Math.max.apply(null, r.fotos.map(f => f.capRegels)), meta = r.fotos.some(f => f.metaRegel);
+        const blok = {type: 'rij', fotos: r.fotos, rh: r.h, gap: gap, meta: meta,
+                      h: r.h + ((capL || meta) ? 14 + (meta ? 22 : 0) + capL * CAP : 0)};
+        r.fotos.forEach(f => { f.rij = blok; });
+        return blok;
       });
-      sluitRij();
+      const blokken = [];
+      fotos.forEach(f => {
+        if (f.uit) { blokken.push(pdfUitBlok(meet, f, gw)); return; }
+        if (blokken.indexOf(f.rij) < 0) blokken.push(f.rij);
+      });
       // de kop van de dag: hoogte vooraf meten
       const titelRegels = Math.min(2, pdfTekstRegels(meet, d.title, gw, pf(400, 60, true)));
       const beschrRegels = pdfTekstRegels(meet, dagBeschrijving(d.id), gw, pf(400, 22));
@@ -9426,8 +9519,9 @@ async function pdfHoofdstuk(ctx, b, nr, tot) {
   const gw = PB - 2 * PM, fh = 980;
   ctx.fillStyle = PDF_K.paper; ctx.fillRect(0, 0, PB, PH);
   ctx.fillStyle = PDF_K.donker; ctx.fillRect(0, 0, PB, fh);
+  // de hoofdfoto heel (niet bijgesneden) op het donkere vlak; een staande foto staat gecentreerd
   let im = b.held ? await cgLaad(b.held.p.src) : null;
-  if (im) { cgCover(ctx, im, 0, 0, PB, fh, 0); im.src = ''; }
+  if (im) { cgPas(ctx, im, 0, 0, PB, fh, 0, 'midden'); im.src = ''; }
   const g = ctx.createLinearGradient(0, fh - 520, 0, fh);
   g.addColorStop(0, 'rgba(25,19,14,0)'); g.addColorStop(.55, 'rgba(25,19,14,.55)'); g.addColorStop(1, 'rgba(25,19,14,.9)');
   ctx.fillStyle = g; ctx.fillRect(0, fh - 520, PB, 520);
@@ -9460,9 +9554,10 @@ async function pdfHoofdstuk(ctx, b, nr, tot) {
   const twee = b.lodges.length > 1;
   for (const id of b.lodges) {
     const st = STAYS[id];
-    const ph = twee ? 150 : 250;
     const li = await cgLaad(kleinUrl(STAYS[id].fotos[0], 1200));
-    pdfFoto(ctx, li, rx, y, rw, ph, 12); if (li) li.src = '';
+    // zo hoog als de foto op deze breedte is, met een maximum (een staande foto staat dan links)
+    const ph = Math.min(twee ? 150 : 250, li && li.naturalWidth ? Math.round(rw * li.naturalHeight / li.naturalWidth) : 250);
+    pdfFoto(ctx, li, rx, y, rw, ph, 12, 'links'); if (li) li.src = '';
     y += ph + 30;
     ctx.fillStyle = PDF_K.ink; ctx.font = pf(400, twee ? 28 : 34, true);
     ctx.fillText(pdfTekstKort(ctx, st.naam, rw), rx - 1, y);
@@ -9532,53 +9627,53 @@ async function pdfDagPagina(ctx, b, nr, tot, melden) {
   }
   for (const blok of b.blokken) {
     if (blok.type === 'rij') {
-      const inRij = blok.fotos.length;
-      // een onvolle laatste rij houdt de celmaat (niet uitrekken: dan vallen de verhalen van de rijen erboven uit het patroon)
-      for (let i = 0; i < inRij; i++) {
-        const f = blok.fotos[i], x = PM + i * (blok.cw + blok.gap);
+      // elke foto heel, op zijn eigen breedte; samen vullen ze de rij (een onvolle laatste rij blijft links)
+      let x = PM;
+      for (let i = 0; i < blok.fotos.length; i++) {
+        const f = blok.fotos[i];
         const im = await cgLaad(f.p.src);
-        pdfFoto(ctx, im, x, y, blok.cw, blok.chh, 8); if (im) im.src = '';
-        if (f.duim) pdfPil(ctx, x + 10, y + blok.chh - 38, String(f.duim), PDF_DUIM, 'rgba(25,21,18,.72)', '#FFFFFF', 18);
-        let cy = y + blok.chh + 26;
+        const r = pdfFoto(ctx, im, x, y, f.w, blok.rh, 8, 'links'); if (im) im.src = '';
+        if (f.duim) pdfPil(ctx, r.x + 10, r.y + r.h - 38, String(f.duim), PDF_DUIM, 'rgba(25,21,18,.72)', '#FFFFFF', 18);
+        let cy = y + blok.rh + 26;
         if (blok.meta) {
           const t = new Date(f.p.taken), tijd = isNaN(t) ? '' : String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0');
           const m = [tijd, f.p.place || ''].filter(Boolean).join('  ·  ');
-          if (m) { ctx.fillStyle = PDF_K.muted; ctx.font = pf(500, 14); ctx.fillText(pdfTekstKort(ctx, m, blok.cw), x, cy - 4); }
+          if (m) { ctx.fillStyle = PDF_K.muted; ctx.font = pf(500, 14); ctx.fillText(pdfTekstKort(ctx, m, f.w), x, cy - 4); }
           cy += 22;
         }
-        if (f.capRegels) pdfTekst(ctx, f.p.caption, x, cy, blok.cw, 24, f.capRegels, pf(400, 18), PDF_K.ink2);
+        if (f.capRegels) pdfTekst(ctx, f.p.caption, x, cy, f.w, 24, f.capRegels, pf(400, 18), PDF_K.ink2);
+        x += f.w + blok.gap;
         if (melden) melden();
       }
     } else {
       const f = blok.f, verhaal = (f.p.caption || '').trim();
       const meta = [f.p.place || '', fmtTaken(f.p.taken)].filter(Boolean).join(' · ');
-      ctx.font = pf(400, 22);
-      const breedRegels = verhaal ? pdfRegels(ctx, verhaal, gw).length : 0;
       const im = await cgLaad(f.p.src);
-      const staand = im && im.naturalHeight > im.naturalWidth * 1.02;
-      if (!verhaal) {
-        pdfFoto(ctx, im, PM, y, gw, blok.h, 10);
-        if (meta) { ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.font = pf(400, 17); ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 8; ctx.fillText(meta, PM + 22, y + blok.h - 22); ctx.restore(); }
-      } else if (breedRegels <= 3 && !staand) {
-        const th = breedRegels * 32 + 44, ih = blok.h - th;
-        pdfFoto(ctx, im, PM, y, gw, ih, 10);
-        pdfTekst(ctx, verhaal, PM, y + ih + 42, gw, 32, 3, pf(400, 22), PDF_K.ink2);
-        if (meta) { ctx.fillStyle = PDF_K.muted; ctx.font = pf(400, 16); ctx.fillText(meta, PB - PM - ctx.measureText(meta).width, y + ih + 42 + Math.min(3, breedRegels) * 32 - 8); }
+      // is het blok onderaan de pagina ingekort, dan de foto evenredig kleiner (nooit bijsnijden)
+      const s = Math.min(1, (blok.h - blok.th) / blok.ih), iw = Math.round(blok.iw * s), ih = Math.round(blok.ih * s);
+      let r;
+      if (blok.variant === 'vol') {
+        r = pdfFoto(ctx, im, PM, y, gw, ih, 10, 'midden');
+        if (meta) { ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.font = pf(400, 17); ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 8; ctx.fillText(meta, r.x + 22, r.y + r.h - 22); ctx.restore(); }
+      } else if (blok.variant === 'onder') {
+        r = pdfFoto(ctx, im, PM, y, gw, ih, 10, 'links');
+        const n = pdfTekst(ctx, verhaal, PM, y + ih + 42, gw, 32, blok.regels, pf(400, 22), PDF_K.ink2);
+        if (meta) { ctx.fillStyle = PDF_K.muted; ctx.font = pf(400, 16); ctx.fillText(meta, PB - PM - ctx.measureText(meta).width, y + ih + 42 + n * 32 - 8); }
       } else {
-        const iw = staand ? 520 : 620, tx = PM + iw + 40, tw = gw - iw - 40;
-        pdfFoto(ctx, im, PM, y, iw, blok.h, 10);
+        r = pdfFoto(ctx, im, PM, y, iw, ih, 10, 'links');
+        const tx = PM + r.w + 40, tw = gw - r.w - 40;
         ctx.fillStyle = kleur; ctx.fillRect(tx, y + 8, 36, 3);
         ctx.font = pf(600, 15); ctx.fillText(pdfSpatie(f.p.fav ? 'Hoogtepunt' : 'Geliefde foto'), tx + 48, y + 16);
         let ty = y + 54;
         if (meta) { ctx.fillStyle = PDF_K.muted; ctx.font = pf(400, 16); ctx.fillText(pdfTekstKort(ctx, meta, tw), tx, ty); ty += 36; }
-        const max = Math.floor((y + blok.h - ty - 10) / 31);
-        pdfTekst(ctx, verhaal, tx, ty + 12, tw, 31, max, pf(400, 21), PDF_K.ink2);
+        const max = Math.floor((y + ih - ty - 10) / 31);
+        if (max > 0) pdfTekst(ctx, verhaal, tx, ty + 12, tw, 31, max, pf(400, 21), PDF_K.ink2);
       }
       if (im) im.src = '';
-      // badge linksboven
-      let bx = PM + 14;
-      if (f.p.fav) bx += pdfPil(ctx, bx, y + 14, 'Hoogtepunt', PDF_STER, 'rgba(255,255,255,.92)', PDF_K.accent, 20) + 8;
-      if (f.duim) pdfPil(ctx, bx, y + 14, String(f.duim), PDF_DUIM, 'rgba(25,21,18,.72)', '#FFFFFF', 20);
+      // badge linksboven op de foto
+      let bx = r.x + 14;
+      if (f.p.fav) bx += pdfPil(ctx, bx, r.y + 14, 'Hoogtepunt', PDF_STER, 'rgba(255,255,255,.92)', PDF_K.accent, 20) + 8;
+      if (f.duim) pdfPil(ctx, bx, r.y + 14, String(f.duim), PDF_DUIM, 'rgba(25,21,18,.72)', '#FFFFFF', 20);
       if (melden) melden();
     }
     y += blok.h + 24;
@@ -9592,17 +9687,24 @@ async function pdfGeliefd(ctx, b, nr, tot, melden) {
   pdfEyebrow(ctx, 'Duimpjes', PM, 126);
   ctx.fillStyle = PDF_K.ink; ctx.font = pf(400, 64, true); ctx.fillText('Meest geliefde foto’s', PM - 3, 214);
   ctx.fillStyle = PDF_K.muted; ctx.font = pf(400, 21); ctx.fillText('De foto’s die de meeste duimpjes kregen van wie meekeek.', PM, 258);
-  const cols = 2, gap = 22, cw = (gw - gap) / cols, ch = 360, top = 320;
-  for (let i = 0; i < b.fotos.length; i++) {
-    const f = b.fotos[i], x = PM + (i % cols) * (cw + gap), y = top + Math.floor(i / cols) * (ch + 74);
-    const im = await cgLaad(f.p.src);
-    pdfFoto(ctx, im, x, y, cw, ch, 10); if (im) im.src = '';
-    pdfPil(ctx, x + 12, y + 12, f.duim + (f.duim === 1 ? ' duimpje' : ' duimpjes'), PDF_DUIM, 'rgba(25,21,18,.72)', '#FFFFFF', 20);
-    ctx.fillStyle = PDF_K.ink2; ctx.font = pf(400, 18);
-    const t = [f.day.days, f.day.title].join(' · ');
-    ctx.fillText(pdfTekstKort(ctx, t, cw), x, y + ch + 30);
-    if (f.p.caption) pdfTekst(ctx, f.p.caption, x, y + ch + 54, cw, 22, 1, pf(400, 16), PDF_K.muted);
-    if (melden) melden();
+  // in rijen op eigen verhouding (niet bijgesneden), met wat ritme in de rijhoogte
+  const gap = 22, top = 320, onder = PH - 140;
+  const rijen = pdfRijen(b.fotos.map(f => Object.assign({}, f)), gw, gap, [330, 280, 360], 400);
+  let y = top;
+  for (const r of rijen) {
+    if (y + r.h + 74 > onder) break;
+    let x = PM;
+    for (const f of r.fotos) {
+      const im = await cgLaad(f.p.src);
+      const t = pdfFoto(ctx, im, x, y, f.w, r.h, 10, 'links'); if (im) im.src = '';
+      pdfPil(ctx, t.x + 12, t.y + 12, f.duim + (f.duim === 1 ? ' duimpje' : ' duimpjes'), PDF_DUIM, 'rgba(25,21,18,.72)', '#FFFFFF', 20);
+      ctx.fillStyle = PDF_K.ink2; ctx.font = pf(400, 18);
+      ctx.fillText(pdfTekstKort(ctx, [f.day.days, f.day.title].join(' · '), f.w), x, y + r.h + 30);
+      if (f.p.caption) pdfTekst(ctx, f.p.caption, x, y + r.h + 54, f.w, 22, 1, pf(400, 16), PDF_K.muted);
+      x += f.w + gap;
+      if (melden) melden();
+    }
+    y += r.h + 74;
   }
   pdfVoet(ctx, nr, tot);
 }
@@ -9687,7 +9789,7 @@ async function heelAlbumPdf() {
   if (knop) knop.disabled = true;
   try {
     try { await document.fonts.ready; } catch (e) {}
-    const plan = albumPlan(opties), totaal = plan.length;
+    const plan = await albumPlan(opties, melden), totaal = plan.length;
     const paginas = [];
     let gedaan = 0, omJpg = null;
     const tel = () => { gedaan++; melden('Foto ' + gedaan + '/' + tot); };
@@ -9730,7 +9832,7 @@ async function heelAlbumPdf() {
       'Fotoalbum · ' + totaal + " pagina's · " + tot + ' foto' + (tot === 1 ? '' : "'s") + ' · ' + opties.dpi + ' dpi · ' + (Math.round(pdf.size / 1024 / 1024 * 10) / 10) + ' MB';
     const hint = document.getElementById('collageHint');
     if (hint) { if (_boekHint === null) _boekHint = hint.innerHTML;
-      hint.innerHTML = 'Eén PDF op A4 (' + opties.dpi + ' dpi): omslag, een overzicht met de kaart, per bestemming een hoofdstukpagina met de overnachting, en per dag de beschrijving en de foto’s met jullie verhalen. Hoogtepunten en foto’s met duimpjes staan groot. Op de telefoon kun je hem met <em>Delen</em> in Bestanden bewaren of via WhatsApp versturen.'; }
+      hint.innerHTML = 'Eén PDF op A4 (' + opties.dpi + ' dpi): omslag, een overzicht met de kaart, per bestemming een hoofdstukpagina met de overnachting, en per dag de beschrijving en de foto’s met jullie verhalen. Hoogtepunten en foto’s met duimpjes staan groot; geen enkele foto wordt bijgesneden. Op de telefoon kun je hem met <em>Delen</em> in Bestanden bewaren of via WhatsApp versturen.'; }
     const deel = document.getElementById('collageDeel');
     let kanDelen = false;
     try { kanDelen = !!(navigator.canShare && navigator.canShare({files: [new File([pdf], naam, {type: 'application/pdf'})]})); } catch (e) {}
