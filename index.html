@@ -4324,7 +4324,8 @@ function metaLine(img) {
   if (!img || (img.isPdf && !img.spot)) return '';
   const bits = [];
   if (img.place) bits.push(SVG.pinSm + '<span>' + esc(img.place) + '</span>');
-  const when = img.spot ? fmtDatum(img.taken) : fmtTaken(img.taken);
+  // spot zonder echte opnametijd (alleen afgevinkt): alleen de datum, geen '12:00'
+  const when = (img.spot && /T12:00:00$/.test(img.taken || '')) ? fmtDatum(img.taken) : fmtTaken(img.taken);
   if (when) bits.push('<span>' + esc(when) + '</span>');
   if (!bits.length) return '';
   return '<div class="slide-meta">' + bits.join('<span class="mdot"></span>') + '</div>';
@@ -7225,6 +7226,10 @@ async function spotFoto(id, event) {
   const dier = alleDieren().find(d => d.id === id);
   toonVoortgang('Foto van de ' + (dier ? dier.naam.toLowerCase() : 'spot') + ' uploaden…', 0, 1);
   try {
+    // Opnamedatum en plek uit de foto zelf (EXIF), net als bij het album —
+    // anders stond er de dag van uploaden bij de spot in plaats van de dag van de foto.
+    let meta = null;
+    try { meta = await readExif(file); } catch(e) { meta = null; }
     const klein = await shrink(file, 1400, 0.82);
     const form = new FormData();
     form.append('image', klein);
@@ -7236,7 +7241,24 @@ async function spotFoto(id, event) {
       const dag = DAYS.find(d => d.id === currentDayId());
       spots[id] = {date: todayIso(), place: dag ? dag.loc : ''};
     }
-    spots[id].src = (data.data.image && data.data.image.url) || data.data.url || data.data.display_url;   // niet display_url: dat is 640 px
+    const s = spots[id];
+    if (meta && meta.taken) {
+      const opname = meta.taken.slice(0, 10);
+      if (opname !== s.date) {
+        // andere dag dan afgevinkt → plek van die reisdag erbij (tenzij de foto zelf GPS heeft)
+        const dagId = dayForDate(opname);
+        const dag = dagId ? DAYS.find(d => d.id === dagId) : null;
+        if (dag) s.place = dag.loc;
+      }
+      s.date = opname;
+      s.taken = meta.taken;
+    } else {
+      delete s.taken;
+    }
+    if (meta && typeof meta.lat === 'number' && typeof meta.lon === 'number') {
+      try { s.place = placeName(meta.lat, meta.lon); } catch(e) {}
+    }
+    s.src = (data.data.image && data.data.image.url) || data.data.url || data.data.display_url;   // niet display_url: dat is 640 px
     renderSpots();
     bouwSpotSlides();
     renderCijfers();
@@ -7308,7 +7330,7 @@ function bouwSpotSlides() {
     const s = spots[d.id];
     return {
       src: s.src, caption: d.naam, isPdf: false, spot: d.id,
-      place: s.place || '', taken: s.date ? s.date + 'T12:00:00' : null, idx: -1
+      place: s.place || '', taken: s.taken || (s.date ? s.date + 'T12:00:00' : null), idx: -1
     };
   });
   lijst.sort((a, b) => {
