@@ -7334,13 +7334,8 @@ function bouwSpotSlides() {
       place: s.place || '', taken: s.taken || (s.date ? s.date + 'T12:00:00' : null), idx: -1
     };
   });
-  lijst.sort((a, b) => {
-    const ta = Date.parse(a.taken), tb = Date.parse(b.taken);
-    if (isNaN(ta) && isNaN(tb)) return 0;
-    if (isNaN(ta)) return 1;
-    if (isNaN(tb)) return -1;
-    return ta - tb;
-  });
+  // Alfabetisch op naam, net als de lijst zelf — dan bladert de fotoweergave in dezelfde volgorde.
+  lijst.sort((a, b) => a.caption.localeCompare(b.caption, 'nl', {sensitivity: 'base'}));
   _slides.__spots = lijst;
   return lijst;
 }
