@@ -795,9 +795,10 @@ footer{background:var(--ink);color:rgba(255,255,255,.55);padding:3.5rem 0 calc(2
 #lbFav.on{background:rgba(245,192,74,.3);box-shadow:0 0 0 1.5px rgba(245,192,74,.85) inset;}
 #lbFav.on:hover{background:rgba(245,192,74,.45);}
 #lbFav.on svg{fill:#F5C04A;stroke:#F5C04A;transform:scale(1.12);filter:drop-shadow(0 0 5px rgba(245,192,74,.7));}
-/* duimpje linksboven: aantal + geven (één keer per apparaat) */
+/* linksboven: duimpje (aantal + geven, één keer per apparaat) en de WhatsApp-deelknop ernaast */
+.lb-links{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));left:calc(14px + env(safe-area-inset-left,0px));z-index:4;display:flex;gap:8px;align-items:center;}
+.lb-links .lb-btn{width:44px;height:44px;box-shadow:0 4px 14px rgba(0,0,0,.35);}
 .lb-duim{
-  position:absolute;top:calc(14px + env(safe-area-inset-top,0px));left:calc(14px + env(safe-area-inset-left,0px));z-index:4;
   height:44px;padding:0 14px 0 12px;border-radius:22px;border:none;cursor:pointer;
   background:var(--accent-2);color:#fff;display:flex;align-items:center;gap:8px;
   font:600 .88rem/1 var(--sans);font-variant-numeric:tabular-nums;white-space:nowrap;
@@ -816,7 +817,8 @@ footer{background:var(--ink);color:rgba(255,255,255,.55);padding:3.5rem 0 calc(2
 /* even opvallen als de lightbox voor het eerst opengaat */
 .lb-duim.hallo{animation:duimHallo .9s cubic-bezier(.2,.8,.2,1) .5s;}
 @keyframes duimHallo{0%,100%{transform:scale(1);}30%{transform:scale(1.12) rotate(-6deg);}60%{transform:scale(1.06) rotate(4deg);}}
-.lightbox.zoomed .lb-duim{opacity:0;pointer-events:none;}
+.lightbox.zoomed .lb-links{opacity:0;pointer-events:none;}
+.lb-links{transition:opacity .2s;}
 .lb-nav{
   position:absolute;top:50%;transform:translateY(-50%);z-index:4;
   width:46px;height:46px;border-radius:50%;border:none;cursor:pointer;
@@ -847,7 +849,8 @@ footer{background:var(--ink);color:rgba(255,255,255,.55);padding:3.5rem 0 calc(2
   .lb-btn{width:44px;height:44px;position:relative;}
   .lb-btn::after{content:'';position:absolute;inset:-5px;border-radius:50%;}
   .lb-btn:last-child{background:rgba(255,255,255,.22);}
-  .lb-duim{top:max(calc(env(safe-area-inset-top,0px) + 16px),60px);left:max(env(safe-area-inset-left,0px),10px);height:44px;border-radius:22px;}
+  .lb-links{top:max(calc(env(safe-area-inset-top,0px) + 16px),60px);left:max(env(safe-area-inset-left,0px),10px);gap:6px;}
+  .lb-links .lb-btn:last-child{background:rgba(255,255,255,.12);}
 }
 
 /* ─────────── FOTOPLEKKEN OP DE KAART ───────────
@@ -2956,12 +2959,14 @@ body.sleepbezig{-webkit-user-select:none;user-select:none;cursor:grabbing;}
     <button class="lb-btn" id="lbVervang" hidden onclick="vervangSpotFoto()" title="Andere foto kiezen"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L8 6H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-4l-1.5-2Z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
     <button class="lb-btn" id="lbFav" onclick="favFromLightbox()" title="Als hoogtepunt markeren"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.2l2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.7l6.1-.9Z"/></svg></button>
     <button class="lb-btn" id="lbDag" onclick="dagKiezenUitLightbox()" title="Naar een andere dag zetten"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="m10 15 2 2 4-4"/></svg></button>
-    <button class="lb-btn" id="lbDeel" onclick="deelFotoUitLightbox()" title="Deze foto delen via WhatsApp"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5.1-1.3A10 10 0 1 0 12 2Zm0 1.8a8.2 8.2 0 1 1-4.2 15.3l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 0 1 12 3.8Zm-3 4.4c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1 2.8 1.2 3c.1.2 2 3.1 4.9 4.3 2.4 1 2.9.8 3.4.7.5 0 1.7-.7 1.9-1.4.2-.7.2-1.2.2-1.3-.1-.1-.3-.2-.6-.4l-2-1c-.3-.1-.5-.1-.7.1l-.9 1.1c-.2.2-.3.2-.6.1-.3-.2-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.5-.5.3-.5c.1-.2 0-.4 0-.5l-.9-2.2c-.2-.5-.4-.5-.6-.5H9Z"/></svg></button>
     <button class="lb-btn" id="lbLink" onclick="copyPhotoLink()" title="Link naar deze foto kopiëren"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg></button>
     <button class="lb-btn" id="lbEdit" onclick="editFromLightbox()" title="Verhaal schrijven of aanpassen"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
     <button class="lb-btn" onclick="closeLightbox()" title="Sluiten (Esc)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
   </div>
-  <button class="lb-duim" id="lbDuim" hidden onclick="duimGeven()" title="Duimpje geven" aria-label="Duimpje geven"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 11v9H4.5A1.5 1.5 0 0 1 3 18.5v-6A1.5 1.5 0 0 1 4.5 11H7Z"/><path d="M7 11l3.6-7.2A1.8 1.8 0 0 1 13 3.3l.6.3a1.8 1.8 0 0 1 .9 2L13.6 10H19a2 2 0 0 1 2 2.4l-1.3 6A2 2 0 0 1 17.7 20H7"/></svg><span id="lbDuimT">Duimpje geven</span><span class="lb-duim-n" id="lbDuimN"></span></button>
+  <div class="lb-links">
+    <button class="lb-duim" id="lbDuim" hidden onclick="duimGeven()" title="Duimpje geven" aria-label="Duimpje geven"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 11v9H4.5A1.5 1.5 0 0 1 3 18.5v-6A1.5 1.5 0 0 1 4.5 11H7Z"/><path d="M7 11l3.6-7.2A1.8 1.8 0 0 1 13 3.3l.6.3a1.8 1.8 0 0 1 .9 2L13.6 10H19a2 2 0 0 1 2 2.4l-1.3 6A2 2 0 0 1 17.7 20H7"/></svg><span id="lbDuimT">Duimpje geven</span><span class="lb-duim-n" id="lbDuimN"></span></button>
+    <button class="lb-btn" id="lbDeel" onclick="deelFotoUitLightbox()" title="Deze foto delen via WhatsApp"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5.1-1.3A10 10 0 1 0 12 2Zm0 1.8a8.2 8.2 0 1 1-4.2 15.3l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 0 1 12 3.8Zm-3 4.4c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1 2.8 1.2 3c.1.2 2 3.1 4.9 4.3 2.4 1 2.9.8 3.4.7.5 0 1.7-.7 1.9-1.4.2-.7.2-1.2.2-1.3-.1-.1-.3-.2-.6-.4l-2-1c-.3-.1-.5-.1-.7.1l-.9 1.1c-.2.2-.3.2-.6.1-.3-.2-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.5-.5.3-.5c.1-.2 0-.4 0-.5l-.9-2.2c-.2-.5-.4-.5-.6-.5H9Z"/></svg></button>
+  </div>
   <button class="lb-nav prev" id="lbPrev" onclick="lbStep(-1)" aria-label="Vorige foto">&#8249;</button>
   <button class="lb-nav next" id="lbNext" onclick="lbStep(1)" aria-label="Volgende foto">&#8250;</button>
   <figure class="lb-figure" id="lbFigure">
