@@ -9315,7 +9315,7 @@ function pdfUrl(p, breedte) {
   const w = Math.min(1800, Math.ceil(breedte * pdfSchaal() * 1.25 / 50) * 50);
   return 'https://wsrv.nl/?url=' + encodeURIComponent(u) + '&w=' + w + '&output=jpg&q=85&we';
 }
-var _pdfLaders = {}, _pdfBezig = 0, _pdfWacht = [];
+var _pdfLaders = {}, _pdfBezig = 0, _pdfWacht = [], _pdfMislukt = 0;
 function pdfLaadBeurt() { return new Promise(r => { _pdfWacht.push(r); pdfVolgende(); }); }
 function pdfVolgende() { while (_pdfBezig < 6 && _pdfWacht.length) { _pdfBezig++; _pdfWacht.shift()(); } }
 function pdfLaad(p, breedte) {
@@ -9324,10 +9324,16 @@ function pdfLaad(p, breedte) {
     _pdfLaders[sleutel] = (async () => {
       await pdfLaadBeurt();
       try {
+        const ok = im => !!(im && im.naturalWidth);
         const u = pdfUrl(p, breedte);
         let im = await cgLaad(u);
-        if ((!im || !im.naturalWidth) && u !== p.src) im = await cgLaad(p.src);
-        return im;
+        if (!ok(im) && u !== p.src) im = await cgLaad(p.src);
+        // mislukt (trage verbinding, tijdelijke storing)? even wachten en nog één keer proberen —
+        // anders blijft er een grijs vak in het boek
+        if (!ok(im)) { await new Promise(r => setTimeout(r, 1500)); im = await cgLaad(u); }
+        if (!ok(im) && u !== p.src) im = await cgLaad(p.src);
+        if (!ok(im)) _pdfMislukt++;
+        return ok(im) ? im : null;
       } finally { _pdfBezig--; pdfVolgende(); }
     })();
   }
@@ -9861,7 +9867,7 @@ async function heelAlbumPdf() {
     const paginas = [];
     let gedaan = 0, omJpg = null;
     const tel = () => { gedaan++; melden('Foto ' + gedaan + '/' + tot); };
-    _pdfLaders = {}; _pdfWacht = []; _pdfBezig = 0;
+    _pdfLaders = {}; _pdfWacht = []; _pdfBezig = 0; _pdfMislukt = 0;
     for (let k = 0; k < plan.length; k++) {
       const b = plan[k], nr = k + 1;
       melden('Pagina ' + nr + '/' + totaal);
@@ -9903,7 +9909,7 @@ async function heelAlbumPdf() {
       'Fotoalbum · ' + totaal + " pagina's · " + tot + ' foto' + (tot === 1 ? '' : "'s") + ' · ' + opties.dpi + ' dpi · ' + (Math.round(pdf.size / 1024 / 1024 * 10) / 10) + ' MB';
     const hint = document.getElementById('collageHint');
     if (hint) { if (_boekHint === null) _boekHint = hint.innerHTML;
-      hint.innerHTML = 'Eén PDF op A4 (' + opties.dpi + ' dpi): omslag, een overzicht met de kaart, per bestemming een hoofdstukpagina met de overnachting, en per dag de beschrijving en de foto’s met jullie verhalen. Hoogtepunten en foto’s met duimpjes staan groot; geen enkele foto wordt bijgesneden. Op de telefoon kun je hem met <em>Delen</em> in Bestanden bewaren of via WhatsApp versturen.'; }
+      hint.innerHTML = (_pdfMislukt ? '<strong>Let op: ' + _pdfMislukt + ' foto' + (_pdfMislukt === 1 ? ' kon' : '’s konden') + ' niet geladen worden en ' + (_pdfMislukt === 1 ? 'staat' : 'staan') + ' als grijs vak in het boek.</strong> Maak de PDF opnieuw met een betere verbinding. ' : '') + 'Eén PDF op A4 (' + opties.dpi + ' dpi): omslag, een overzicht met de kaart, per bestemming een hoofdstukpagina met de overnachting, en per dag de beschrijving en de foto’s met jullie verhalen. Hoogtepunten en foto’s met duimpjes staan groot; geen enkele foto wordt bijgesneden. Op de telefoon kun je hem met <em>Delen</em> in Bestanden bewaren of via WhatsApp versturen.'; }
     const deel = document.getElementById('collageDeel');
     let kanDelen = false;
     try { kanDelen = !!(navigator.canShare && navigator.canShare({files: [new File([pdf], naam, {type: 'application/pdf'})]})); } catch (e) {}
