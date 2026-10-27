@@ -790,6 +790,11 @@ footer{background:var(--ink);color:rgba(255,255,255,.55);padding:3.5rem 0 calc(2
 }
 .lb-btn:hover{background:rgba(255,255,255,.26);}
 .lb-btn[hidden]{display:none;}
+/* ster: duidelijk geel (gevuld) als de foto een hoogtepunt is */
+#lbFav svg{transition:transform .2s cubic-bezier(.2,.8,.2,1);}
+#lbFav.on{background:rgba(245,192,74,.3);box-shadow:0 0 0 1.5px rgba(245,192,74,.85) inset;}
+#lbFav.on:hover{background:rgba(245,192,74,.45);}
+#lbFav.on svg{fill:#F5C04A;stroke:#F5C04A;transform:scale(1.12);filter:drop-shadow(0 0 5px rgba(245,192,74,.7));}
 /* duimpje linksboven: aantal + geven (één keer per apparaat) */
 .lb-duim{
   position:absolute;top:calc(14px + env(safe-area-inset-top,0px));left:calc(14px + env(safe-area-inset-left,0px));z-index:4;
@@ -5408,7 +5413,11 @@ function refreshLightbox() {
   const isSpot = !!img.spot;
   document.getElementById('lbEdit').hidden = !!img.isPdf || isSpot;
   const favKnop = document.getElementById('lbFav');
-  if (favKnop) { favKnop.hidden = !!img.isPdf || isSpot; favKnop.classList.toggle('on', !!img.fav); }
+  if (favKnop) {
+    favKnop.hidden = !!img.isPdf || isSpot;
+    favKnop.classList.toggle('on', !!img.fav);
+    favKnop.title = img.fav ? 'Hoogtepunt — tik om weg te halen' : 'Als hoogtepunt markeren';
+  }
   const linkKnop = document.getElementById('lbLink');
   if (linkKnop) linkKnop.hidden = !!img.isPdf || isSpot;
   const deelKnop = document.getElementById('lbDeel');
