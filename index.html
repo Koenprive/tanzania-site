@@ -3560,16 +3560,21 @@ function samenvoegRecords(basis, online, lokaal) {
     const oMap = new Map(O.map(p => [p.src, p]));
     const lMap = new Map(L.map(p => [p.src, p]));
     const blijft = src => !(bMap.has(src) && !lMap.has(src)) && !(bMap.has(src) && !oMap.has(src));
+    // de verhouding (r) telt niet mee als 'veranderd' (het fotoboek zet hem bij veel foto's tegelijk)
+    const zonderR = p => { if (!p || typeof p !== 'object') return p; const q = Object.assign({}, p); delete q.r; return q; };
+    const tekstFoto = p => tekst(zonderR(p));
     const kies = src => {
       const l = lMap.get(src), o = oMap.get(src), b = bMap.get(src);
       const orig = (l && l.o) || (o && o.o);   // een origineel gaat nooit verloren, van welke kant het ook komt
-      if (l && o && b && tekst(l) === tekst(b) && tekst(o) !== tekst(b)) {
+      const verh = (l && l.r) || (o && o.r);   // de verhouding ook niet
+      if (l && o && b && tekstFoto(l) === tekstFoto(b) && tekstFoto(o) !== tekstFoto(b)) {
         // alleen de ander heeft deze foto veranderd: zijn velden overnemen in ons object
         Object.keys(l).forEach(k => delete l[k]);
         Object.assign(l, o);
       }
       const r = l || o;
       if (r && orig && !r.o) r.o = orig;
+      if (r && verh && !r.r) r.r = verh;
       return r;
     };
     const volgordeL = L.filter(p => bMap.has(p.src)).map(p => p.src).join('\n');
@@ -4450,6 +4455,9 @@ async function uploadNaarImgbb(file, meta) {
   // Let op: display_url is bij grote foto's een verkleinde kopie (640 px, 'medium').
   // De volle webversie (1800 px) staat op image.url.
   const rec = {src: (data.data.image && data.data.image.url) || data.data.url || data.data.display_url, caption: ''};
+  // verhouding breedte÷hoogte (voor het fotoboek, dat dan niet hoeft te meten)
+  const bw = parseInt(data.data.width, 10), bh = parseInt(data.data.height, 10);
+  if (bw > 0 && bh > 0) rec.r = arRond(bw, bh);
   if (meta) {
     if (typeof meta.lat === 'number' && typeof meta.lon === 'number') {
       rec.lat = Math.round(meta.lat * 1e5) / 1e5; rec.lon = Math.round(meta.lon * 1e5) / 1e5;
@@ -8966,7 +8974,7 @@ async function tekenOmslagPdf(tot, plekken, foto) {
   const [c, ctx] = pdfCanvas();
   ctx.fillStyle = '#2A2119'; ctx.fillRect(0, 0, PB, PH);
   let im = null;
-  if (foto && foto.src) { try { im = await cgLaad(foto.src); } catch (e) { im = null; } }
+  if (foto && foto.src) { try { im = await pdfHaal(foto, PB); } catch (e) { im = null; } }
   if (im) {
     // gekozen foto bovenin — heel, niet bijgesneden (een staande foto staat gecentreerd op het donker) —
     // en loopt onderaan zacht over in het donker boven 'FOTOALBUM'
@@ -9260,9 +9268,21 @@ function pdfFoto(ctx, im, x, y, w, h, straal, uitlijn) {
 }
 
 // ── verhoudingen van de foto's (breedte ÷ hoogte), nodig om zonder bijsnijden te kunnen indelen ──
+// De verhouding staat als `r` bij de foto in de opslag (bij het uploaden meteen, oudere foto's worden
+// één keer gemeten en daarna bewaard). Daarnaast een kopie op dit toestel (tz_ar), zodat ook als het
+// bewaren mislukt niemand hier twee keer hoeft te wachten.
 var _pdfAr = {};
-function pdfAr(f) { const a = _pdfAr[f.p.src]; return (a && isFinite(a)) ? a : 1.5; }
+function pdfArLees() { try { const m = JSON.parse(localStorage.getItem('tz_ar') || '{}'); if (m && typeof m === 'object') Object.assign(_pdfAr, m); } catch (e) {} }
+function pdfArBewaar() { try { localStorage.setItem('tz_ar', JSON.stringify(_pdfAr)); } catch (e) {} }
+function pdfAr(f) {
+  const a = (f.p && typeof f.p.r === 'number' && f.p.r > 0) ? f.p.r : _pdfAr[f.p.src];
+  return (a && isFinite(a)) ? a : 1.5;
+}
+function arRond(w, h) { return Math.round(w / h * 100) / 100; }
 async function pdfMeet(fotos, melden) {
+  pdfArLees();
+  // wat al bekend is van een eerdere keer: op het toestel of bij een andere foto met dezelfde bron
+  fotos.forEach(f => { if (typeof f.p.r === 'number' && f.p.r > 0) _pdfAr[f.p.src] = f.p.r; });
   const todo = fotos.filter(f => !_pdfAr[f.p.src]);
   let klaar = 0, i = 0;
   const meet = async () => {
@@ -9271,13 +9291,62 @@ async function pdfMeet(fotos, melden) {
       // eerst het kleine plaatje (snel), lukt dat niet dan het origineel
       let im = await cgLaad(kleinUrl(f.p, 200));
       if (!im || !im.naturalWidth) im = await cgLaad(f.p.src);
-      if (im && im.naturalWidth && im.naturalHeight) _pdfAr[f.p.src] = im.naturalWidth / im.naturalHeight;
+      if (im && im.naturalWidth && im.naturalHeight) _pdfAr[f.p.src] = arRond(im.naturalWidth, im.naturalHeight);
       if (im) im.src = '';
       klaar++;
       if (melden) melden('Foto’s meten ' + klaar + '/' + todo.length);
     }
   };
-  await Promise.all([0, 1, 2, 3, 4, 5].map(meet));
+  if (todo.length) await Promise.all([0, 1, 2, 3, 4, 5].map(meet));
+  // de gemeten verhoudingen bij de foto's zetten en bewaren (één keer; daarna is meten niet meer nodig)
+  let nieuw = 0;
+  fotos.forEach(f => { const a = _pdfAr[f.p.src]; if (a && f.p.r !== a) { f.p.r = a; nieuw++; } });
+  pdfArBewaar();
+  if (nieuw && _keys) savePhotosToCloud().catch(() => {});   // op de achtergrond; lukt het niet, dan staat het nog op dit toestel
+}
+
+// ── foto's voor het boek laden: op maat en vooruit ──
+// Niet het origineel (2–5 MB) maar via wsrv een versie van precies de breedte die op de pagina nodig is
+// (× dpi-schaal, iets groter voor scherpte; jpg q=85). Lukt dat niet, dan het origineel. Offline: het origineel
+// (dat zit mogelijk in de cache). Hooguit 6 tegelijk; pdfVooruit() zet de foto's van een pagina alvast klaar.
+function pdfUrl(p, breedte) {
+  const u = p.src;
+  if (!u || u.indexOf('http') !== 0 || !navigator.onLine) return u;
+  const w = Math.min(1800, Math.ceil(breedte * pdfSchaal() * 1.25 / 50) * 50);
+  return 'https://wsrv.nl/?url=' + encodeURIComponent(u) + '&w=' + w + '&output=jpg&q=85&we';
+}
+var _pdfLaders = {}, _pdfBezig = 0, _pdfWacht = [];
+function pdfLaadBeurt() { return new Promise(r => { _pdfWacht.push(r); pdfVolgende(); }); }
+function pdfVolgende() { while (_pdfBezig < 6 && _pdfWacht.length) { _pdfBezig++; _pdfWacht.shift()(); } }
+function pdfLaad(p, breedte) {
+  const sleutel = p.src + '|' + Math.round(breedte);
+  if (!_pdfLaders[sleutel]) {
+    _pdfLaders[sleutel] = (async () => {
+      await pdfLaadBeurt();
+      try {
+        const u = pdfUrl(p, breedte);
+        let im = await cgLaad(u);
+        if ((!im || !im.naturalWidth) && u !== p.src) im = await cgLaad(p.src);
+        return im;
+      } finally { _pdfBezig--; pdfVolgende(); }
+    })();
+  }
+  return _pdfLaders[sleutel];
+}
+// de geladen foto ophalen en uit de voorraad halen (de tekenaar maakt hem daarna leeg)
+async function pdfHaal(p, breedte) { const im = await pdfLaad(p, breedte); delete _pdfLaders[p.src + '|' + Math.round(breedte)]; return im; }
+function pdfVooruit(lijst) { (lijst || []).forEach(x => { if (x && x.p && x.p.src) pdfLaad(x.p, x.w); }); }
+// welke foto's (en hoe breed) een pagina uit het plan nodig heeft
+function pdfPaginaFotos(b) {
+  const gw = PB - 2 * PM, uit = [];
+  if (b.type === 'omslag') { const f = omslagFoto(); if (f && f.src) uit.push({p: f, w: PB}); }
+  if (b.type === 'hoofdstuk' && b.held) uit.push({p: b.held.p, w: Math.min(PB, 980 * pdfAr(b.held))});
+  if (b.type === 'dag') b.blokken.forEach(bl => {
+    if (bl.type === 'rij') bl.fotos.forEach(f => uit.push({p: f.p, w: f.w}));
+    else uit.push({p: bl.f.p, w: Math.min(gw, bl.iw)});
+  });
+  if (b.type === 'geliefd') (b.rijen || []).forEach(r => r.fotos.forEach(f => uit.push({p: f.p, w: f.w})));
+  return uit;
 }
 
 // Foto's in rijen verdelen, elke foto op zijn eigen verhouding (zoals Google Foto's): de rij wordt
@@ -9466,7 +9535,7 @@ async function albumPlan(opties, melden) {
     });
   });
   const top = geliefd.sort((a, b) => b.duim - a.duim).slice(0, 6);
-  if (top.length >= 3) pag.push({type: 'geliefd', fotos: top});
+  if (top.length >= 3) pag.push({type: 'geliefd', fotos: top, rijen: pdfRijen(top.map(f => Object.assign({}, f)), gw, 22, [330, 280, 360], 400)});
   pag.push({type: 'slot'});
   return pag;
 }
@@ -9520,7 +9589,7 @@ async function pdfHoofdstuk(ctx, b, nr, tot) {
   ctx.fillStyle = PDF_K.paper; ctx.fillRect(0, 0, PB, PH);
   ctx.fillStyle = PDF_K.donker; ctx.fillRect(0, 0, PB, fh);
   // de hoofdfoto heel (niet bijgesneden) op het donkere vlak; een staande foto staat gecentreerd
-  let im = b.held ? await cgLaad(b.held.p.src) : null;
+  let im = b.held ? await pdfHaal(b.held.p, Math.min(PB, fh * pdfAr(b.held))) : null;
   if (im) { cgPas(ctx, im, 0, 0, PB, fh, 0, 'midden'); im.src = ''; }
   const g = ctx.createLinearGradient(0, fh - 520, 0, fh);
   g.addColorStop(0, 'rgba(25,19,14,0)'); g.addColorStop(.55, 'rgba(25,19,14,.55)'); g.addColorStop(1, 'rgba(25,19,14,.9)');
@@ -9631,7 +9700,7 @@ async function pdfDagPagina(ctx, b, nr, tot, melden) {
       let x = PM;
       for (let i = 0; i < blok.fotos.length; i++) {
         const f = blok.fotos[i];
-        const im = await cgLaad(f.p.src);
+        const im = await pdfHaal(f.p, f.w);
         const r = pdfFoto(ctx, im, x, y, f.w, blok.rh, 8, 'links'); if (im) im.src = '';
         if (f.duim) pdfPil(ctx, r.x + 10, r.y + r.h - 38, String(f.duim), PDF_DUIM, 'rgba(25,21,18,.72)', '#FFFFFF', 18);
         let cy = y + blok.rh + 26;
@@ -9648,7 +9717,7 @@ async function pdfDagPagina(ctx, b, nr, tot, melden) {
     } else {
       const f = blok.f, verhaal = (f.p.caption || '').trim();
       const meta = [f.p.place || '', fmtTaken(f.p.taken)].filter(Boolean).join(' · ');
-      const im = await cgLaad(f.p.src);
+      const im = await pdfHaal(f.p, Math.min(gw, blok.iw));
       // is het blok onderaan de pagina ingekort, dan de foto evenredig kleiner (nooit bijsnijden)
       const s = Math.min(1, (blok.h - blok.th) / blok.ih), iw = Math.round(blok.iw * s), ih = Math.round(blok.ih * s);
       let r;
@@ -9689,13 +9758,12 @@ async function pdfGeliefd(ctx, b, nr, tot, melden) {
   ctx.fillStyle = PDF_K.muted; ctx.font = pf(400, 21); ctx.fillText('De foto’s die de meeste duimpjes kregen van wie meekeek.', PM, 258);
   // in rijen op eigen verhouding (niet bijgesneden), met wat ritme in de rijhoogte
   const gap = 22, top = 320, onder = PH - 140;
-  const rijen = pdfRijen(b.fotos.map(f => Object.assign({}, f)), gw, gap, [330, 280, 360], 400);
   let y = top;
-  for (const r of rijen) {
+  for (const r of b.rijen) {
     if (y + r.h + 74 > onder) break;
     let x = PM;
     for (const f of r.fotos) {
-      const im = await cgLaad(f.p.src);
+      const im = await pdfHaal(f.p, f.w);
       const t = pdfFoto(ctx, im, x, y, f.w, r.h, 10, 'links'); if (im) im.src = '';
       pdfPil(ctx, t.x + 12, t.y + 12, f.duim + (f.duim === 1 ? ' duimpje' : ' duimpjes'), PDF_DUIM, 'rgba(25,21,18,.72)', '#FFFFFF', 20);
       ctx.fillStyle = PDF_K.ink2; ctx.font = pf(400, 18);
@@ -9793,9 +9861,12 @@ async function heelAlbumPdf() {
     const paginas = [];
     let gedaan = 0, omJpg = null;
     const tel = () => { gedaan++; melden('Foto ' + gedaan + '/' + tot); };
+    _pdfLaders = {}; _pdfWacht = []; _pdfBezig = 0;
     for (let k = 0; k < plan.length; k++) {
       const b = plan[k], nr = k + 1;
       melden('Pagina ' + nr + '/' + totaal);
+      // de foto's van deze en de volgende pagina alvast ophalen terwijl we tekenen
+      pdfVooruit(pdfPaginaFotos(b)); if (plan[k + 1]) pdfVooruit(pdfPaginaFotos(plan[k + 1]));
       let c;
       if (b.type === 'omslag') {
         c = await tekenOmslagPdf(tot, UPLOAD_GROUPS.filter(g => g.ids.some(id => (photos[id] || []).length)).length, omslagFoto());
