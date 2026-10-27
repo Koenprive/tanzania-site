@@ -1191,7 +1191,15 @@ footer{background:var(--ink);color:rgba(255,255,255,.55);padding:3.5rem 0 calc(2
 .om-tegel:hover{transform:translateY(-1px);}
 .om-tegel .blad-ster{position:absolute;right:4px;top:3px;font-size:.7rem;color:#F5C04A;text-shadow:0 1px 2px rgba(0,0,0,.5);}
 .om-geen{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:.62rem;font-weight:600;letter-spacing:.04em;color:var(--muted);text-align:center;line-height:1.3;}
-@media(max-width:560px){.om-inhoud{flex-direction:column;}.om-voorbeeld{width:120px;align-self:center;}.om-grid{max-height:36vh;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));}}
+/* smal scherm (iPhone): het hele venster scrolt, voorbeeld klein naast het rooster, zodat de foto's nooit worden platgedrukt */
+@media(max-width:560px){
+  .om-venster{overflow:auto;-webkit-overflow-scrolling:touch;}
+  .om-hint-lang{display:none;}
+  .om-inhoud{flex:none;overflow:visible;align-items:flex-start;gap:.8rem;}
+  .om-voorbeeld{width:92px;}
+  .om-grid{max-height:42vh;min-height:160px;grid-template-columns:repeat(auto-fill,minmax(60px,1fr));}
+  .om-venster .cg-onder{position:sticky;bottom:0;background:var(--surface);z-index:1;}
+}
 /* PDF-opties (kwaliteit en foto's per pagina) in het omslag-venster */
 .om-opties{display:flex;flex-direction:column;gap:.5rem;padding:.8rem 1.2rem 0;}
 .om-optie{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;}
@@ -3118,7 +3126,7 @@ body.sleepbezig{-webkit-user-select:none;user-select:none;cursor:grabbing;}
     <button class="vb-sluit" onclick="sluitOmslag()" aria-label="Sluiten"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
     <div class="om-kop">
       <p class="cg-titel" id="omslagTitel">Welke foto komt op de omslag?</p>
-      <p class="cg-hint">De foto staat bovenaan de omslag, boven het woord <em>Fotoalbum</em>. Favorieten (&#9733;) staan vooraan. Het album krijgt per bestemming een hoofdstukpagina met de overnachting en per dag de beschrijving, een tijdbalkje en de foto&#39;s met jullie verhalen; hoogtepunten en foto&#39;s met duimpjes staan groot.</p>
+      <p class="cg-hint">De foto staat bovenaan de omslag, boven het woord <em>Fotoalbum</em>. Favorieten (&#9733;) staan vooraan. <span class="om-hint-lang">Het album krijgt per bestemming een hoofdstukpagina met de overnachting en per dag de beschrijving, een tijdbalkje en de foto&#39;s met jullie verhalen; hoogtepunten en foto&#39;s met duimpjes staan groot.</span></p>
     </div>
     <div class="om-inhoud">
       <div class="om-voorbeeld" id="omslagVoorbeeld" aria-hidden="true">
