@@ -9898,6 +9898,12 @@ async function heelAlbumPdf() {
   if (knop) knop.disabled = true;
   try {
     try { await document.fonts.ready; } catch (e) {}
+    // eerst de actuele duimpjes van álle foto's ophalen: anders telt het boek alleen de
+    // standen die dit apparaat toevallig al kende, en klopt "meest geliefd" niet
+    if (navigator.onLine !== false && typeof duimStandenOphalen === 'function') {
+      melden('Duimpjes ophalen…');
+      try { await duimStandenOphalen((k, n) => melden('Duimpjes ' + k + '/' + n)); } catch (e) {}
+    }
     const plan = await albumPlan(opties, melden), totaal = plan.length;
     const paginas = [];
     let gedaan = 0, omJpg = null;
@@ -10566,14 +10572,13 @@ function renderDuimTop() {
   }).join('');
 }
 var _duimOphalen = false;
-async function duimAllesOphalen() {
-  const knop = document.getElementById('duimBijwerk');
-  if (_duimOphalen) return;
-  if (navigator.onLine === false) { toonVolgordeMelding('Geen internet \u2014 bijwerken lukt pas met verbinding'); return; }
+// De stand van \u00e1lle foto's ophalen bij de teller. `melden(klaar, totaal)` krijgt de voortgang.
+// Geeft {sleutels, mis} terug, of null als er niets op te halen viel (offline / al bezig / geen foto's).
+async function duimStandenOphalen(melden) {
+  if (_duimOphalen || navigator.onLine === false) return null;
   const items = alleFotoItems();
-  if (!items.length) return;
+  if (!items.length) return null;
   _duimOphalen = true;
-  if (knop) { knop.disabled = true; knop.textContent = 'Bijwerken\u2026'; }
   const sleutels = Array.from(new Set(items.map(x => duimSleutel(x.p.src))));
   let klaar = 0, mis = 0;
   const rij = sleutels.slice();
@@ -10582,17 +10587,30 @@ async function duimAllesOphalen() {
       const k = rij.shift();
       try { const v = await tellerVraag('get', k); if (v != null) _duimStand[k] = v; } catch (e) { mis++; }
       klaar++;
-      if (knop && klaar % 5 === 0) knop.textContent = 'Bijwerken\u2026 ' + klaar + ' / ' + sleutels.length;
+      if (melden && klaar % 5 === 0) melden(klaar, sleutels.length);
     }
   }
-  await Promise.all([werker(), werker(), werker(), werker(), werker(), werker()]);
+  try {
+    await Promise.all([werker(), werker(), werker(), werker(), werker(), werker()]);
+  } finally {
+    _duimOphalen = false;
+  }
   if (mis < sleutels.length) { try { localStorage.setItem('tz_duimstand_t', String(Date.now())); } catch (e) {} }
   duimBewaarStand();
-  _duimOphalen = false;
-  if (knop) { knop.disabled = false; knop.textContent = 'Bijwerken'; }
   renderDuimTop(); ververseDuimPillen();
-  const totaal = sleutels.reduce((s, k) => s + (_duimStand[k] || 0), 0);
-  toonVolgordeMelding(mis ? 'Bijgewerkt, ' + mis + ' foto\u2019s niet gelukt' : totaal + ' duimpje' + (totaal === 1 ? '' : 's') + ' op ' + sleutels.length + ' foto\u2019s');
+  return {sleutels: sleutels, mis: mis};
+}
+async function duimAllesOphalen() {
+  const knop = document.getElementById('duimBijwerk');
+  if (_duimOphalen) return;
+  if (navigator.onLine === false) { toonVolgordeMelding('Geen internet \u2014 bijwerken lukt pas met verbinding'); return; }
+  if (!alleFotoItems().length) return;
+  if (knop) { knop.disabled = true; knop.textContent = 'Bijwerken\u2026'; }
+  const uit = await duimStandenOphalen((k, n) => { if (knop) knop.textContent = 'Bijwerken\u2026 ' + k + ' / ' + n; });
+  if (knop) { knop.disabled = false; knop.textContent = 'Bijwerken'; }
+  if (!uit) return;
+  const totaal = uit.sleutels.reduce((s, k) => s + (_duimStand[k] || 0), 0);
+  toonVolgordeMelding(uit.mis ? 'Bijgewerkt, ' + uit.mis + ' foto\u2019s niet gelukt' : totaal + ' duimpje' + (totaal === 1 ? '' : 's') + ' op ' + uit.sleutels.length + ' foto\u2019s');
 }
 
 // Dagpagina geopend: één tik per apparaat per dag(datum) per reisdag.
