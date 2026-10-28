@@ -5374,16 +5374,39 @@ var _lb = null;   // {id, i}
 // _lbGroep = lijst dag-id's (met eigen foto's) of null (gewoon één dag).
 var _lbGroep = null;
 
+// Vaste bladerroute: een eigen lijst {id, i} (bv. de meest geliefde foto's) waar
+// vorige/volgende doorheen loopt in plaats van door de foto's van de dag.
+var _lbRoute = null;   // {items: [{id, i}], label}
+var _lbRouteNieuw = null;
 function openLightbox(id, i, gi) {
   const list = _slides[id] || [];
-  if (!list.length) return;
-  _lbGroep = (typeof gi === 'number' && UPLOAD_GROUPS[gi])
+  if (!list.length) { _lbRouteNieuw = null; return; }
+  _lbRoute = _lbRouteNieuw; _lbRouteNieuw = null;
+  _lbGroep = (!_lbRoute && typeof gi === 'number' && UPLOAD_GROUPS[gi])
     ? UPLOAD_GROUPS[gi].ids.filter(d => (_slides[d] || []).some(x => !x.isPdf)) : null;
   if (_lbGroep && _lbGroep.length < 2) _lbGroep = null;
   _lb = {id: id, i: Math.max(0, Math.min(i, list.length - 1))};
   document.getElementById('lightbox').hidden = false;
   document.body.style.overflow = 'hidden';
   refreshLightbox();
+}
+// Lightbox openen op item k van een vaste lijst; bladeren blijft binnen die lijst.
+function openLightboxRoute(items, k, label) {
+  items = (items || []).filter(x => x && (_slides[x.id] || [])[x.i]);
+  if (!items.length) return;
+  k = Math.max(0, Math.min(k || 0, items.length - 1));
+  _lbRouteNieuw = items.length > 1 ? {items: items, label: label || ''} : null;
+  openLightbox(items[k].id, items[k].i);
+}
+function lbRoutePlek() {
+  if (!_lb || !_lbRoute) return -1;
+  return _lbRoute.items.findIndex(x => x.id === _lb.id && x.i === _lb.i);
+}
+// Valt er te bladeren? (dag met meer foto's, bestemming-groep of vaste route)
+function lbMeer() {
+  if (!_lb) return false;
+  if (_lbRoute && lbRoutePlek() >= 0) return _lbRoute.items.length > 1;
+  return (_slides[_lb.id] || []).length > 1 || (!!_lbGroep && _lbGroep.indexOf(_lb.id) >= 0);
 }
 
 function refreshLightbox() {
@@ -5412,9 +5435,11 @@ function refreshLightbox() {
 
   document.getElementById('lbCap').innerHTML = metaLine(img) + (img.caption ? '<p>' + esc(img.caption) + '</p>' : '');
   const lbMeta = document.getElementById('lbMeta');
+  const rk = lbRoutePlek();
   lbMeta.textContent =
     (img.spot ? 'Spotlijst  —  ' : (day ? day.days + ' · ' + day.title + '  —  ' : '')) +
-    (_lb.i + 1) + ' / ' + list.length + groepTeller();
+    (rk >= 0 ? (rk + 1) + ' / ' + _lbRoute.items.length + (_lbRoute.label ? ' ' + _lbRoute.label : '')
+             : (_lb.i + 1) + ' / ' + list.length + groepTeller());
   const bronFoto = (!img.isPdf && !img.spot && photos[_lb.id] && typeof img.idx === 'number') ? photos[_lb.id][img.idx] : null;
   const origU = (typeof origineelUrl === 'function') ? origineelUrl((bronFoto && bronFoto.o) ? bronFoto : img) : null;
   if (origU) {
@@ -5443,7 +5468,7 @@ function refreshLightbox() {
   if (vervKnop) vervKnop.hidden = !isSpot || !_keys;
   if (typeof ververseDuim === 'function') ververseDuim(img);
   if (!isSpot) zetHash('f=' + _lb.id + '-' + _lb.i);
-  const meer = list.length > 1 || (!!_lbGroep && _lbGroep.indexOf(_lb.id) >= 0);
+  const meer = lbMeer();
   document.getElementById('lbPrev').hidden = !meer;
   document.getElementById('lbNext').hidden = !meer;
 }
@@ -5532,6 +5557,16 @@ function groepTeller() {
 function lbStep(delta) {
   if (!_lb) return;
   const list = _slides[_lb.id] || [];
+  const rk = lbRoutePlek();
+  if (rk >= 0) {
+    // Vaste route (meest geliefd): naar het volgende/vorige item van die lijst.
+    const n = _lbRoute.items.length;
+    if (n < 2) return;
+    const x = _lbRoute.items[(rk + delta + n) % n];
+    _lb = {id: x.id, i: x.i};
+    refreshLightbox();
+    return;
+  }
   if (_lbGroep && _lbGroep.indexOf(_lb.id) >= 0) {
     // Voorbij de laatste (of vóór de eerste) eigen foto van deze dag → volgende/vorige dag.
     const eigen = eigenSlides(_lb.id).length;
@@ -5557,6 +5592,7 @@ function closeLightbox() {
   document.getElementById('lightbox').hidden = true;
   _lb = null;
   _lbGroep = null;
+  _lbRoute = null;
   zetHash('');
   if (document.getElementById('storyModal').hidden) document.body.style.overflow = '';
 }
@@ -5695,7 +5731,7 @@ function lbToggleZoom(px, py) {
       lbKlem(30);
       lbPasToe(false);
     } else if (g.as === 'x') {
-      const meer = (_slides[_lb && _lb.id] || []).length > 1;
+      const meer = lbMeer();
       LBZ.x = meer ? g.dx : g.dx * 0.25;   // één foto: alleen een beetje meegeven
       LBZ.y = 0;
       lbPasToe(false);
@@ -5748,7 +5784,7 @@ function lbToggleZoom(px, py) {
     _lbGebaarKlaar = Date.now();
     const snel = (Date.now() - g.t0) < 250;
     if (g.as === 'x') {
-      const meer = (_slides[_lb && _lb.id] || []).length > 1;
+      const meer = lbMeer();
       if (meer && (Math.abs(g.dx) > 55 || (snel && Math.abs(g.dx) > 25))) {
         lbStep(g.dx < 0 ? 1 : -1);               // refreshLightbox zet de zoom terug
         return;
@@ -10546,6 +10582,8 @@ function alleFotoItems() {
   DAYS.forEach(d => (photos[d.id] || []).forEach((p, i) => { if (p.src) uit.push({dayId: d.id, idx: i, p: p}); }));
   return uit;
 }
+var _duimTopLijst = [];
+function openGeliefd(k) { openLightboxRoute(_duimTopLijst, k, 'meest geliefd'); }
 function renderDuimTop() {
   const wrap = document.getElementById('geliefd'), strip = document.getElementById('duimStrip'), info = document.getElementById('duimInfo');
   if (!wrap || !strip) return;
@@ -10562,9 +10600,11 @@ function renderDuimTop() {
       'Tik op <b>Bijwerken</b> om te zien welke foto\u2019s de meeste duimpjes hebben.') + '</p>';
     return;
   }
-  strip.innerHTML = top.map(y => {
+  // Bladeren in de lightbox loopt langs deze toplijst, niet langs de foto's van de dag.
+  _duimTopLijst = top.map(y => ({id: y.x.dayId, i: y.x.idx}));
+  strip.innerHTML = top.map((y, k) => {
     const d = DAYS.find(z => z.id === y.x.dayId);
-    return '<button type="button" class="duim-tegel" onclick="openLightbox(\'' + y.x.dayId + '\',' + y.x.idx + ')" title="' +
+    return '<button type="button" class="duim-tegel" onclick="openGeliefd(' + k + ')" title="' +
       esc([d ? d.days : '', y.x.p.place, fmtTaken(y.x.p.taken)].filter(Boolean).join(' \u00b7 ')) + '">' +
       '<img ' + imgAttr(y.x.p, 360) + ' alt="" loading="lazy" decoding="async">' +
       '<span class="tile-duim">' + DUIM_SVG + y.n + '</span>' +
