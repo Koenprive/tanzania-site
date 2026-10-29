@@ -3056,8 +3056,8 @@ body.sleepbezig{-webkit-user-select:none;user-select:none;cursor:grabbing;}
     <h3 class="deel-kop" id="descTitel">Beschrijving aanpassen</h3>
     <p class="dier-meta" id="descMeta"></p>
     <form class="desc-form" id="descForm" onsubmit="event.preventDefault();descOpslaan()">
-      <textarea id="descTekst" maxlength="2000" placeholder="Wat hebben jullie deze dag gedaan?"></textarea>
-      <p class="desc-teller" id="descTeller">0 / 2000</p>
+      <textarea id="descTekst" maxlength="5000" placeholder="Wat hebben jullie deze dag gedaan?"></textarea>
+      <p class="desc-teller" id="descTeller">0 / 5000</p>
       <p class="dier-hint">Schrijf gewoon over de tekst heen. Iedereen ziet de nieuwe tekst; de oorspronkelijke tekst uit het reisvoorstel blijft bewaard en is altijd terug te zetten.</p>
       <p class="desc-note" id="descNote" hidden></p>
       <p class="dier-fout" id="descFout" hidden></p>
@@ -7483,7 +7483,7 @@ function descNote(t) {
 }
 function descTeller() {
   const ta = document.getElementById('descTekst'), t = document.getElementById('descTeller');
-  if (ta && t) t.textContent = ta.value.length + ' / ' + (ta.maxLength > 0 ? ta.maxLength : 2000);
+  if (ta && t) t.textContent = ta.value.length + ' / ' + (ta.maxLength > 0 ? ta.maxLength : 5000);
 }
 document.addEventListener('input', e => { if (e.target && e.target.id === 'descTekst') descTeller(); });
 
