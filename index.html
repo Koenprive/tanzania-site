@@ -1143,6 +1143,10 @@ footer{background:var(--ink);color:rgba(255,255,255,.55);padding:3.5rem 0 calc(2
 .desc-form textarea{width:100%;min-height:190px;resize:vertical;font-family:var(--sans);font-size:16px;line-height:1.65;
   color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:12px;padding:.8rem .9rem;outline:none;}
 .desc-form textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-weak);}
+.desc-form .desc-titel{width:100%;font-family:var(--serif);font-size:1.15rem;font-weight:500;color:var(--ink);background:var(--bg);
+  border:1.5px solid var(--line);border-radius:12px;padding:.6rem .9rem;outline:none;}
+.desc-form .desc-titel:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-weak);}
+.desc-label{font-family:var(--sans);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:.1rem 0 -.25rem;}
 .desc-teller{font-family:var(--sans);font-size:.72rem;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums;margin:-.3rem 0 0;}
 .desc-note{font-family:var(--sans);font-size:.78rem;color:var(--accent);margin:0;}
 .desc-note[hidden]{display:none;}
@@ -3053,18 +3057,21 @@ body.sleepbezig{-webkit-user-select:none;user-select:none;cursor:grabbing;}
   <div class="deel-venster">
     <div class="deel-greep" aria-hidden="true"></div>
     <button class="vb-sluit" onclick="sluitDesc()" aria-label="Sluiten"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
-    <h3 class="deel-kop" id="descTitel">Beschrijving aanpassen</h3>
+    <h3 class="deel-kop" id="descTitel">Titel &amp; beschrijving aanpassen</h3>
     <p class="dier-meta" id="descMeta"></p>
     <form class="desc-form" id="descForm" onsubmit="event.preventDefault();descOpslaan()">
+      <p class="desc-label">Titel</p>
+      <input type="text" class="desc-titel" id="descTitelVeld" maxlength="60" autocomplete="off" placeholder="Titel van deze dag">
+      <p class="desc-label">Verhaal</p>
       <textarea id="descTekst" maxlength="5000" placeholder="Wat hebben jullie deze dag gedaan?"></textarea>
       <p class="desc-teller" id="descTeller">0 / 5000</p>
-      <p class="dier-hint">Schrijf gewoon over de tekst heen. Iedereen ziet de nieuwe tekst; de oorspronkelijke tekst uit het reisvoorstel blijft bewaard en is altijd terug te zetten.</p>
+      <p class="dier-hint">Schrijf gewoon over de titel en de tekst heen. Iedereen ziet de nieuwe versie; de oorspronkelijke titel en tekst uit het reisvoorstel blijven bewaard en zijn altijd terug te zetten.</p>
       <p class="desc-note" id="descNote" hidden></p>
       <p class="dier-fout" id="descFout" hidden></p>
       <button type="submit" class="dier-knop" id="descKnop">Bewaren</button>
       <div class="deel-rij">
         <button type="button" class="vb-link2" onclick="sluitDesc()">Annuleren</button>
-        <button type="button" class="dier-weg" id="descStd" hidden onclick="descStandaard()">Oorspronkelijke tekst terugzetten</button>
+        <button type="button" class="dier-weg" id="descStd" hidden onclick="descStandaard()">Oorspronkelijke titel en tekst terugzetten</button>
       </div>
     </form>
   </div>
@@ -3351,6 +3358,7 @@ var spots = {};
 // Die dagen worden niet meer op opnametijd gesorteerd; nieuwe foto's komen achteraan.
 var handmatig = {};
 var dagTekst = {};   // dag-id -> zelf aangepaste beschrijving (leeg = tekst uit het reisvoorstel)
+var dagTitel = {};   // dag-id -> zelf aangepaste titel (leeg = titel uit DAYS)
 var hoofdFoto = {};  // dag-id -> src van de gekozen hoofdfoto bovenaan de dagpagina (jsonbin: _hoofd)
 
 // Noodinfo die de reizigers zelf invullen (verzekering, reisbureau, gids, notities)
@@ -3493,7 +3501,7 @@ function migreerDag1117(rec) {
   }
   delete rec.dag1117;
   if (spiegel1117Aan()) rec.dag1117 = [].concat.apply([], ZANZIBAR_DAGEN.map(k => Array.isArray(rec[k]) ? rec[k] : []));
-  ['_handmatig', '_basisUit', '_dagTekst', '_hoofd'].forEach(k => {
+  ['_handmatig', '_basisUit', '_dagTekst', '_dagTitel', '_hoofd'].forEach(k => {
     const o = rec[k];
     if (!o || typeof o !== 'object' || !('dag1117' in o)) return;
     if (k === '_handmatig') ZANZIBAR_DAGEN.forEach(z => { if (!(z in o)) o[z] = o.dag1117; });
@@ -3520,11 +3528,11 @@ function migreerDag78(rec) {
   } else if (!heeftNieuw && 'dag78' in rec) {
     delete rec.dag78;
   }
-  ['_handmatig', '_basisUit', '_dagTekst'].forEach(k => {
+  ['_handmatig', '_basisUit', '_dagTekst', '_dagTitel'].forEach(k => {
     const o = rec[k];
     if (!o || typeof o !== 'object' || !('dag78' in o)) return;
     if (!('dag7' in o)) o.dag7 = o.dag78;
-    if (k !== '_dagTekst' && !('dag8' in o)) o.dag8 = o.dag78;
+    if (k !== '_dagTekst' && k !== '_dagTitel' && !('dag8' in o)) o.dag8 = o.dag78;
     delete o.dag78;
   });
   return rec;
@@ -3622,7 +3630,7 @@ function samenvoegRecords(basis, online, lokaal) {
     });
     uit[id] = res;
   });
-  ['_spots', '_basisUit', '_handmatig', '_dagTekst', '_hoofd'].forEach(k => {
+  ['_spots', '_basisUit', '_handmatig', '_dagTekst', '_dagTitel', '_hoofd'].forEach(k => {
     const b = (basis[k] && typeof basis[k] === 'object') ? basis[k] : {};
     const o = (online[k] && typeof online[k] === 'object') ? online[k] : {};
     const l = (lokaal[k] && typeof lokaal[k] === 'object') ? lokaal[k] : {};
@@ -3647,8 +3655,9 @@ function pasSamengevoegdToe(rec) {
   verborgenBasis = (rec._basisUit && typeof rec._basisUit === 'object') ? rec._basisUit : {};
   noodInfo = (rec._nood && typeof rec._nood === 'object') ? rec._nood : {};
   dagTekst = (rec._dagTekst && typeof rec._dagTekst === 'object') ? rec._dagTekst : {};
+  dagTitel = (rec._dagTitel && typeof rec._dagTitel === 'object') ? rec._dagTitel : {};
   hoofdFoto = (rec._hoofd && typeof rec._hoofd === 'object') ? rec._hoofd : {};
-  DAYS.forEach(d => ververseDesc(d.id));
+  DAYS.forEach(d => { ververseDesc(d.id); ververseTitel(d.id); });
   koers = (rec._koers && typeof rec._koers === 'object') ? rec._koers : null;
   paklijst = Array.isArray(rec._paklijst) ? rec._paklijst : null;
   DAYS.forEach(d => {
@@ -3735,8 +3744,9 @@ function applyRecord(record) {
   noodInfo = (record._nood && typeof record._nood === 'object') ? record._nood : {};
   if (typeof renderNood === 'function') renderNood();
   dagTekst = (record._dagTekst && typeof record._dagTekst === 'object') ? record._dagTekst : {};
+  dagTitel = (record._dagTitel && typeof record._dagTitel === 'object') ? record._dagTitel : {};
   hoofdFoto = (record._hoofd && typeof record._hoofd === 'object') ? record._hoofd : {};
-  DAYS.forEach(d => ververseDesc(d.id));
+  DAYS.forEach(d => { ververseDesc(d.id); ververseTitel(d.id); });
   koers = (record._koers && typeof record._koers === 'object') ? record._koers : null;
   paklijst = Array.isArray(record._paklijst) ? record._paklijst : null;
   try { renderGeld(); renderPak(); } catch (e) {}
@@ -3772,6 +3782,7 @@ function buildRecord() {
   record._handmatig = handmatig;
   record._nood = noodInfo;
   record._dagTekst = dagTekst;
+  record._dagTitel = dagTitel;
   record._hoofd = hoofdFoto;
   if (koers) record._koers = koers;
   if (paklijst) record._paklijst = paklijst;
@@ -5033,7 +5044,7 @@ function vraagVerwijderen(id, p) {
   const img = document.getElementById('wegFoto');
   img.src = kleinUrl(p, 200) || p.src || '';
   document.getElementById('wegDag').textContent =
-    [day ? day.days + ' · ' + day.title : '', p.place, fmtTaken(p.taken)].filter(Boolean).join(' · ');
+    [day ? day.days + ' · ' + dagNaam(day) : '', p.place, fmtTaken(p.taken)].filter(Boolean).join(' · ');
   const cap = document.getElementById('wegCap');
   cap.textContent = p.caption ? '“' + p.caption + '”' : 'Zonder verhaal';
   cap.style.color = p.caption ? '' : 'var(--muted)';
@@ -5129,7 +5140,7 @@ async function openStory(id, idx) {
   _story = {id: id, idx: idx};
   const day = DAYS.find(d => d.id === id);
   document.getElementById('storyImg').src = photo.src;
-  document.getElementById('storyDay').textContent = day ? (day.days + ' · ' + day.title) : 'Verhaal';
+  document.getElementById('storyDay').textContent = day ? (day.days + ' · ' + dagNaam(day)) : 'Verhaal';
   document.getElementById('storyTitle').textContent = photo.caption ? 'Verhaal aanpassen' : 'Wat gebeurde er op deze foto?';
   document.getElementById('storyMeta').innerHTML = metaLine({place: photo.place, taken: photo.taken});
   const ta = document.getElementById('storyText');
@@ -5339,7 +5350,7 @@ function openKaartPlek(ci) {
   document.getElementById('kaartSub').textContent =
     c.fotos.length + ' foto' + (c.fotos.length > 1 ? "'s" : '') + ' · ' + c.days +
     (dagen.length > 1 ? ' · ' + dagen.length + ' dagen met foto’s' : '');
-  const secties = dagen.map(d => ({kop: d.days + ' · ' + d.date, sub: d.title, fotos: c.fotos.filter(f => f.day === d), dagId: d.id}));
+  const secties = dagen.map(d => ({kop: d.days + ' · ' + d.date, sub: dagNaam(d), fotos: c.fotos.filter(f => f.day === d), dagId: d.id}));
   const ster = '<svg class="kp-ster" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.4l-5.9 3.2 1.3-6.6L2.5 9.4l6.6-.8z"/></svg>';
   document.getElementById('kaartLijst').innerHTML = secties.map(sec =>
     '<div class="kp-sectie"><h4>' + esc(sec.kop) + (sec.sub ? '<small>' + esc(sec.sub) + '</small>' : '') +
@@ -5437,7 +5448,7 @@ function refreshLightbox() {
   const lbMeta = document.getElementById('lbMeta');
   const rk = lbRoutePlek();
   lbMeta.textContent =
-    (img.spot ? 'Spotlijst  —  ' : (day ? day.days + ' · ' + day.title + '  —  ' : '')) +
+    (img.spot ? 'Spotlijst  —  ' : (day ? day.days + ' · ' + dagNaam(day) + '  —  ' : '')) +
     (rk >= 0 ? (rk + 1) + ' / ' + _lbRoute.items.length + (_lbRoute.label ? ' ' + _lbRoute.label : '')
              : (_lb.i + 1) + ' / ' + list.length + groepTeller());
   const bronFoto = (!img.isPdf && !img.spot && photos[_lb.id] && typeof img.idx === 'number') ? photos[_lb.id][img.idx] : null;
@@ -6708,7 +6719,7 @@ function renderTimeline() {
             <span class="tl-rij-dag">${d.days}</span>
             <span class="tl-rij-datum">${d.date}</span>
           </span>
-          <span class="tl-rij-titel">${esc(d.title)}</span>
+          <span class="tl-rij-titel">${esc(dagNaam(d))}</span>
           <span class="tl-rij-loc">${SVG.pin}<span>${esc(d.loc)}</span></span>
         </span>
         <span class="tl-rij-telling" id="tel-${d.id}">${dagTelling(d)}</span>
@@ -6834,7 +6845,7 @@ function dpKopHtml(d) {
       '<span class="dp-dag' + (vandaag ? ' vandaag' : '') + '">' + esc(d.days) + (vandaag ? ' · vandaag' : '') + '</span>' +
       '<span class="dp-datum">' + esc(d.date) + '</span>' +
     '</div>' +
-    '<h2 class="dp-titel">' + esc(d.title) + '</h2>' +
+    '<h2 class="dp-titel">' + esc(dagNaam(d)) + '</h2>' +
     '<p class="dp-loc">' + SVG.pin + '<span>' + esc(d.loc) + '</span>' +
       (n ? '<span class="dp-telling">· ' + n + ' foto' + (n > 1 ? '&#39;s' : '') + '</span>' : '') +
     '</p></div>';
@@ -6888,7 +6899,7 @@ function kiesHoofdFoto(id) {
   const eigen = photos[id] || [];
   const basis = basisFotos(id);
   document.getElementById('hoofdTitel').textContent = 'Hoofdfoto van ' + d.days;
-  document.getElementById('hoofdMeta').textContent = d.date + ' · ' + d.title + ' · deze foto staat groot bovenaan de dag';
+  document.getElementById('hoofdMeta').textContent = d.date + ' · ' + dagNaam(d) + ' · deze foto staat groot bovenaan de dag';
   const auto = '<button type="button" class="om-tegel hoofd-auto' + (!hoofdFoto[id] ? ' gekozen' : '') + '" onclick="hoofdKies(null)" title="Vanzelf: het eerste hoogtepunt, anders de eerste foto">' +
     '<span class="om-geen">Vanzelf<br><small>eerste ster of eerste foto</small></span></button>';
   const tegels = eigen.map((p, i) =>
@@ -7108,7 +7119,7 @@ function tick() {
       if (lbl) lbl.innerHTML = 'Onderweg<br>' + (dag ? esc(dag.days) : '');
       cd.innerHTML =
         '<div class="cd-now">' +
-          '<div class="cd-now-title">' + (dag ? esc(dag.title) : 'Tanzania') + '</div>' +
+          '<div class="cd-now-title">' + (dag ? esc(dagNaam(dag)) : 'Tanzania') + '</div>' +
           '<div class="cd-now-sub"><span id="tzClock">--:--</span><span class="dot" id="tzDot" hidden></span>' +
           '<span id="tzWeer"></span></div>' +
           '<div class="cd-plan" id="tzPlan"></div>' +
@@ -7460,12 +7471,27 @@ function dagBeschrijving(id) {
   const d = DAYS.find(x => x.id === id);
   return d ? d.desc : '';
 }
+// Titel van een dag: de zelf gekozen titel, anders die uit DAYS. Neemt een
+// dag-object of een dag-id.
+function dagNaam(d) {
+  if (!d) return '';
+  const id = typeof d === 'string' ? d : d.id;
+  const t = dagTitel[id];
+  if (typeof t === 'string' && t.trim()) return t.trim();
+  const o = typeof d === 'string' ? DAYS.find(x => x.id === d) : d;
+  return o ? o.title : '';
+}
+function ververseTitel(id) {
+  const r = document.querySelector('#item-' + id + ' .tl-rij-titel');
+  if (r) r.textContent = dagNaam(id);
+  if (typeof ververseDagKop === 'function' && _dagOpen === id) ververseDagKop();
+}
 function descHtml(id) {
-  const eigen = typeof dagTekst[id] === 'string' && dagTekst[id].trim();
+  const eigen = (typeof dagTekst[id] === 'string' && dagTekst[id].trim()) || (typeof dagTitel[id] === 'string' && dagTitel[id].trim());
   return '<div class="tl-desc-wrap" id="descwrap-' + id + '">' +
     '<p class="tl-desc">' + esc(dagBeschrijving(id)) + '</p>' +
     '<div class="desc-acties">' +
-      '<button type="button" class="desc-bewerk" onclick="openDesc(\'' + id + '\')" title="Tekst van deze dag aanpassen">' + SVG.pencilSm + 'Beschrijving aanpassen</button>' +
+      '<button type="button" class="desc-bewerk" onclick="openDesc(\'' + id + '\')" title="Tekst van deze dag aanpassen">' + SVG.pencilSm + 'Titel &amp; beschrijving aanpassen</button>' +
       (eigen ? '<span class="desc-eigen">Zelf aangepast</span>' : '') +
     '</div></div>';
 }
@@ -7498,9 +7524,11 @@ function openDesc(id) {
   }
   _descDag = id;
   const ta = document.getElementById('descTekst');
+  const ti = document.getElementById('descTitelVeld');
   ta.value = dagBeschrijving(id);
-  document.getElementById('descMeta').textContent = d.days + ' · ' + d.date + ' · ' + d.title;
-  document.getElementById('descStd').hidden = !(typeof dagTekst[id] === 'string' && dagTekst[id].trim());
+  if (ti) ti.value = dagNaam(id);
+  document.getElementById('descMeta').textContent = d.days + ' · ' + d.date + ' · ' + d.loc;
+  document.getElementById('descStd').hidden = !((typeof dagTekst[id] === 'string' && dagTekst[id].trim()) || (typeof dagTitel[id] === 'string' && dagTitel[id].trim()));
   document.getElementById('descKnop').disabled = false;
   descFoutTekst(''); descNote(''); descTeller();
   m.hidden = false;
@@ -7520,42 +7548,54 @@ document.addEventListener('keydown', e => {
 function descStandaard() {
   const d = DAYS.find(x => x.id === _descDag);
   const ta = document.getElementById('descTekst');
+  const ti = document.getElementById('descTitelVeld');
   if (!d || !ta) return;
   ta.value = d.desc;
+  if (ti) ti.value = d.title;
   descTeller();
-  descNote('De oorspronkelijke tekst staat weer in het veld — tik op Bewaren om hem terug te zetten.');
+  descNote('De oorspronkelijke titel en tekst staan weer in de velden — tik op Bewaren om ze terug te zetten.');
   try { ta.focus({preventScroll: true}); } catch (e) {}
 }
 
 async function descOpslaan() {
   if (_descBezig || !_descDag) return;
   const ta = document.getElementById('descTekst');
-  return descBewaar(_descDag, ta ? ta.value : '');
+  const ti = document.getElementById('descTitelVeld');
+  return descBewaar(_descDag, ta ? ta.value : '', ti ? ti.value : undefined);
 }
 
-async function descBewaar(id, tekst) {
+// titel === undefined → titel niet aanraken (vangnet zonder venster)
+async function descBewaar(id, tekst, titel) {
   const d = DAYS.find(x => x.id === id);
   if (!d) return;
   const nieuw = String(tekst || '').replace(/\r\n?/g, '\n').replace(/[ \t]+\n/g, '\n').trim();
   const oud = dagTekst[id];
   const wordtStandaard = !nieuw || nieuw === d.desc.trim();
-  if ((wordtStandaard && !oud) || (!wordtStandaard && nieuw === oud)) { sluitDesc(); return; }
+  const tekstGelijk = (wordtStandaard && !oud) || (!wordtStandaard && nieuw === oud);
+  const nTitel = titel === undefined ? undefined : String(titel || '').replace(/\s+/g, ' ').trim().slice(0, 60);
+  const oudTitel = dagTitel[id];
+  const titelStandaard = nTitel === undefined ? undefined : (!nTitel || nTitel === d.title.trim());
+  const titelGelijk = nTitel === undefined || (titelStandaard && !oudTitel) || (!titelStandaard && nTitel === oudTitel);
+  if (tekstGelijk && titelGelijk) { sluitDesc(); return; }
   const knop = document.getElementById('descKnop');
   _descBezig = true; if (knop) knop.disabled = true;
   try {
     if (!await ensureUnlocked('Wachtwoord om de beschrijving aan te passen:')) return;
-    if (wordtStandaard) delete dagTekst[id]; else dagTekst[id] = nieuw;
-    ververseDesc(id);
+    if (!tekstGelijk) { if (wordtStandaard) delete dagTekst[id]; else dagTekst[id] = nieuw; }
+    if (!titelGelijk) { if (titelStandaard) delete dagTitel[id]; else dagTitel[id] = nTitel; }
+    ververseDesc(id); ververseTitel(id);
     try {
       await savePhotosToCloud();
     } catch (e) {
       if (oud === undefined) delete dagTekst[id]; else dagTekst[id] = oud;
-      ververseDesc(id);
+      if (oudTitel === undefined) delete dagTitel[id]; else dagTitel[id] = oudTitel;
+      ververseDesc(id); ververseTitel(id);
       descFoutTekst('Opslaan mislukt — probeer het nog eens.');
       return;
     }
     sluitDesc();
-    toonVolgordeMelding(wordtStandaard ? 'Oorspronkelijke tekst teruggezet' : '✓ Beschrijving bewaard');
+    const alleenTitel = tekstGelijk && !titelGelijk;
+    toonVolgordeMelding((wordtStandaard && (titelGelijk || titelStandaard)) ? 'Oorspronkelijke tekst teruggezet' : (alleenTitel ? '✓ Titel bewaard' : '✓ Beschrijving bewaard'));
   } finally {
     _descBezig = false; if (knop) knop.disabled = false;
   }
@@ -8150,7 +8190,7 @@ function deelBericht(d) {
   const dieren = deelDieren(d.id);
   const maxV = 3;
   const r = [];
-  r.push((d.emoji ? d.emoji + ' ' : '') + '*' + d.days + ' — ' + d.title + '*');
+  r.push((d.emoji ? d.emoji + ' ' : '') + '*' + d.days + ' — ' + dagNaam(d) + '*');
   r.push('📅 ' + d.date + '  ·  📍 ' + d.loc);
   if (_deelOpties.programma && dagBeschrijving(d.id)) { r.push(''); r.push(kortAf(dagBeschrijving(d.id), 260)); }
   if (_deelOpties.verhalen && verhalen.length) {
@@ -8168,7 +8208,7 @@ function deelBericht(d) {
 
 function fotoBericht(d, f) {
   const r = [];
-  r.push((d.emoji ? d.emoji + ' ' : '📷 ') + '*' + d.days + ' — ' + d.title + '*');
+  r.push((d.emoji ? d.emoji + ' ' : '📷 ') + '*' + d.days + ' — ' + dagNaam(d) + '*');
   const plek = f.place || d.loc, tijd = fotoTijd(f);
   r.push('📍 ' + plek + (tijd ? '  ·  🕒 ' + tijd : '') + '  ·  📅 ' + d.date);
   if (f.caption) { r.push(''); r.push(kortAf(f.caption, 700)); }
@@ -8223,7 +8263,7 @@ function toonDeel(id) {
   const n = (photos[id] || []).length;
   const h = hoofdFotoVan(id);
   const src = h ? h.src : null;
-  document.getElementById('deelKaart').innerHTML = deelKaartHtml(src, d.emoji, esc(d.days), esc(d.date), esc(d.title),
+  document.getElementById('deelKaart').innerHTML = deelKaartHtml(src, d.emoji, esc(d.days), esc(d.date), esc(dagNaam(d)),
     SVG.pin + '<span>' + esc(d.loc) + '</span>' + (n ? '<span>&middot; ' + n + ' foto' + (n > 1 ? '&#39;s' : '') + '</span>' : ''));
   _deelOpties.programma = deelVerhalen(id).length === 0;
   deelVulTekst();
@@ -8239,7 +8279,7 @@ function toonDeelFoto(dagId, idx) {
   _deelDag = d;
   deelOpen('foto', siteUrl() + '#f=' + dagId + '-' + idx, 'Foto delen');
   const tijd = fotoTijd(f);
-  document.getElementById('deelKaart').innerHTML = deelKaartHtml(f.src, d.emoji, esc(d.days), esc(d.date), esc(d.title),
+  document.getElementById('deelKaart').innerHTML = deelKaartHtml(f.src, d.emoji, esc(d.days), esc(d.date), esc(dagNaam(d)),
     SVG.pin + '<span>' + esc(f.place || d.loc) + '</span>' + (tijd ? '<span>&middot; ' + tijd + '</span>' : ''));
   document.getElementById('deelTekst').value = fotoBericht(d, f);
   deelTel();
@@ -8282,7 +8322,7 @@ function toonDagKies(id, idx) {
   const opDatum = p.taken ? dayForDate(p.taken) : null;
   document.getElementById('dagKiesFoto').src = kleinUrl(p, 200) || p.src || '';
   document.getElementById('dagKiesNu').textContent =
-    ['Nu bij ' + (day ? day.days + ' · ' + day.title : id), p.place, fmtTaken(p.taken)].filter(Boolean).join(' · ');
+    ['Nu bij ' + (day ? day.days + ' · ' + dagNaam(day) : id), p.place, fmtTaken(p.taken)].filter(Boolean).join(' · ');
   const cap = document.getElementById('dagKiesCap');
   cap.textContent = p.caption ? '\u201c' + p.caption + '\u201d' : (p.taken ? '' : 'Geen opnamedatum in de foto');
   document.getElementById('dagKiesUitleg').textContent = opDatum && opDatum !== id
@@ -8292,7 +8332,7 @@ function toonDagKies(id, idx) {
     const nu = d.id === id, tip = d.id === opDatum && !nu;
     return '<button type="button" class="' + (nu ? 'nu' : '') + (tip ? ' tip' : '') + '"' +
       (nu ? ' disabled' : ' onclick="verplaatsFoto(\'' + d.id + '\')"') + '>' +
-      '<span class="dk-badge">' + d.days + '</span><span><span class="dk-titel">' + d.title + '</span>' +
+      '<span class="dk-badge">' + d.days + '</span><span><span class="dk-titel">' + esc(dagNaam(d)) + '</span>' +
       '<span class="dk-sub">' + d.date + (nu ? ' · staat hier nu' : tip ? ' · volgens de opnamedatum' : '') + '</span></span></button>';
   }).join('');
   m.hidden = false;
@@ -8430,7 +8470,7 @@ function deelVolledigeTekst() {
 
 function deelTitel() {
   if (_deel.mode === 'reis') return 'Tanzania & Zanzibar — de reis in cijfers';
-  return _deelDag ? _deelDag.days + ' — ' + _deelDag.title : 'Tanzania & Zanzibar';
+  return _deelDag ? _deelDag.days + ' — ' + dagNaam(_deelDag) : 'Tanzania & Zanzibar';
 }
 
 // ── versturen ──
@@ -9594,7 +9634,7 @@ async function albumPlan(opties, melden) {
         if (blokken.indexOf(f.rij) < 0) blokken.push(f.rij);
       });
       // de kop van de dag: hoogte vooraf meten
-      const titelRegels = Math.min(2, pdfTekstRegels(meet, d.title, gw, pf(400, 60, true)));
+      const titelRegels = Math.min(2, pdfTekstRegels(meet, dagNaam(d), gw, pf(400, 60, true)));
       const beschrRegels = pdfTekstRegels(meet, dagBeschrijving(d.id), gw, pf(400, 22));
       const tijdbalk = fotos.filter(f => f.p.taken && !isNaN(Date.parse(f.p.taken))).length >= 2;
       const kopH = 70 + 48 + titelRegels * 68 + 42 + 38 + 36 + 34 + beschrRegels * 34 + 44 + (tijdbalk ? 74 + 20 : 0);
@@ -9740,7 +9780,7 @@ async function pdfDagPagina(ctx, b, nr, tot, melden) {
     ctx.fillStyle = PDF_K.muted; ctx.font = pf(400, 17);
     const hs = 'Hoofdstuk ' + (b.gi + 1) + ' · ' + b.g.label; ctx.fillText(hs, PB - PM - ctx.measureText(hs).width, y);
     y += 48;
-    const tl = pdfTekst(ctx, d.title, PM - 2, y + 44, gw, 68, 2, pf(400, 60, true), PDF_K.ink);
+    const tl = pdfTekst(ctx, dagNaam(d), PM - 2, y + 44, gw, 68, 2, pf(400, 60, true), PDF_K.ink);
     y += tl * 68 + 8;
     // plek
     pdfIcoon(ctx, SVG.pin, PM, y - 2, 22, kleur);
@@ -9767,7 +9807,7 @@ async function pdfDagPagina(ctx, b, nr, tot, melden) {
   } else {
     y = 126;
     pdfEyebrow(ctx, d.days + '  ·  ' + d.date + '  ·  vervolg', PM, y, kleur);
-    ctx.fillStyle = PDF_K.ink; ctx.font = pf(400, 36, true); ctx.fillText(pdfTekstKort(ctx, d.title, gw), PM - 1, y + 54);
+    ctx.fillStyle = PDF_K.ink; ctx.font = pf(400, 36, true); ctx.fillText(pdfTekstKort(ctx, dagNaam(d), gw), PM - 1, y + 54);
     ctx.fillStyle = PDF_K.line; ctx.fillRect(PM, y + 78, gw, 1);
     y = 236;
   }
@@ -9844,7 +9884,7 @@ async function pdfGeliefd(ctx, b, nr, tot, melden) {
       const t = pdfFoto(ctx, im, x, y, f.w, r.h, 10, 'links'); if (im) im.src = '';
       pdfPil(ctx, t.x + 12, t.y + 12, f.duim + (f.duim === 1 ? ' duimpje' : ' duimpjes'), PDF_DUIM, 'rgba(25,21,18,.72)', '#FFFFFF', 20);
       ctx.fillStyle = PDF_K.ink2; ctx.font = pf(400, 18);
-      ctx.fillText(pdfTekstKort(ctx, [f.day.days, f.day.title].join(' · '), f.w), x, y + r.h + 30);
+      ctx.fillText(pdfTekstKort(ctx, [f.day.days, dagNaam(f.day)].join(' · '), f.w), x, y + r.h + 30);
       if (f.p.caption) pdfTekst(ctx, f.p.caption, x, y + r.h + 54, f.w, 22, 1, pf(400, 16), PDF_K.muted);
       x += f.w + gap;
       if (melden) melden();
@@ -10070,7 +10110,7 @@ function zipVeiligeNaam(s) {
   return String(s || '').replace(/[–—]/g, '-').replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, ' ').trim();
 }
 function zipDagMap(d, nr) {
-  return String(nr).padStart(2, '0') + ' ' + zipVeiligeNaam(d.days) + (d.title ? ' - ' + zipVeiligeNaam(d.title) : '');
+  return String(nr).padStart(2, '0') + ' ' + zipVeiligeNaam(d.days) + (dagNaam(d) ? ' - ' + zipVeiligeNaam(dagNaam(d)) : '');
 }
 function zipFotoNaam(p, dagNr, i, ext) {
   let tijd = '';
@@ -10677,7 +10717,7 @@ function toonDagTeller() {
     let beste = null;
     DAYS.forEach(d => { const n = stand[d.id] || 0; if (n > 0 && (!beste || n > beste.n)) beste = {d: d, n: n}; });
     el.innerHTML = beste
-      ? 'Meest bekeken dag <b>' + esc(beste.d.days + ' · ' + beste.d.title) + '</b> (' + Number(beste.n).toLocaleString('nl-NL') + '&times;)'
+      ? 'Meest bekeken dag <b>' + esc(beste.d.days + ' · ' + dagNaam(beste.d)) + '</b> (' + Number(beste.n).toLocaleString('nl-NL') + '&times;)'
       : '';
   };
   if (kopie && kopie.stand) teken(kopie.stand);
@@ -10922,7 +10962,7 @@ function renderVandaag() {
   if (voorVertrek) {
     html += '<div class="vk-titel">Nog één nachtje slapen</div><div class="vk-sub">Vrijdag 16 oktober vliegen we naar Kilimanjaro.</div>';
   } else if (dag) {
-    html += '<div class="vk-titel">' + esc(dag.title) + '</div><div class="vk-sub">' + esc(dag.days) + ' · ' + esc(dag.loc) + '</div>';
+    html += '<div class="vk-titel">' + esc(dagNaam(dag)) + '</div><div class="vk-sub">' + esc(dag.days) + ' · ' + esc(dag.loc) + '</div>';
   }
 
   // vluchten vandaag
@@ -10974,7 +11014,7 @@ function renderVandaag() {
     else if (sMorgen && sMorgen !== sNu && STAYS[sMorgen]) zinnen.push('We verhuizen naar <b>' + esc(STAYS[sMorgen].naam) + '</b>' + (STAYS[sMorgen].plaats ? ' in ' + esc(STAYS[sMorgen].plaats) : '') + '.');
     else if (!sMorgen && morgen === TRIP_END) zinnen.push('Laatste dag &mdash; ’s avonds de nachtvlucht naar huis.');
     const dagM = DAYS.find(d => d.id === dagVoorDatum(morgen));
-    if (!zinnen.length && dagM && dagM.id !== id) zinnen.push('<b>' + esc(dagM.days) + ':</b> ' + esc(dagM.title) + '.');
+    if (!zinnen.length && dagM && dagM.id !== id) zinnen.push('<b>' + esc(dagM.days) + ':</b> ' + esc(dagNaam(dagM)) + '.');
     if (zinnen.length) html += '<div class="vk-blok"><div class="vk-kop">Morgen</div><div class="vk-morgen">' + zinnen.join(' ') + '</div></div>';
   }
 
@@ -11255,7 +11295,9 @@ async function importData(ev) {
     spots = (record._spots && typeof record._spots === 'object') ? record._spots : {};
     handmatig = (record._handmatig && typeof record._handmatig === 'object') ? record._handmatig : {};
     hoofdFoto = (record._hoofd && typeof record._hoofd === 'object') ? record._hoofd : {};
-    DAYS.forEach(d => { sortByTaken(d.id); renderCarousel(d.id); updateCount(d.id); });
+    dagTekst = (record._dagTekst && typeof record._dagTekst === 'object') ? record._dagTekst : {};
+    dagTitel = (record._dagTitel && typeof record._dagTitel === 'object') ? record._dagTitel : {};
+    DAYS.forEach(d => { sortByTaken(d.id); renderCarousel(d.id); updateCount(d.id); ververseDesc(d.id); ververseTitel(d.id); });
     renderSpots(); renderFavs(); renderCollages(); renderCijfers(); renderPhotoDots();
     await savePhotosToCloud();
     alert('Reservekopie teruggezet.');
