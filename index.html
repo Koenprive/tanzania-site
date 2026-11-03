@@ -1595,6 +1595,72 @@ nav{position:-webkit-sticky;position:sticky;}
 .tabbar button.actief{color:var(--accent);}
 .tabbar button.actief svg{transform:translateY(-1px);}
 
+/* ═══════════ 360° ═══════════ */
+.v360-raster{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:1.1rem;}
+.v360-kaart{
+  position:relative;display:block;width:100%;border:none;padding:0;margin:0;text-align:left;cursor:pointer;
+  background:var(--surface);border-radius:14px;overflow:hidden;font-family:var(--sans);color:var(--ink);
+  box-shadow:0 10px 30px rgba(25,21,18,.08);transition:transform .22s,box-shadow .22s;
+}
+.v360-kaart:hover{transform:translateY(-3px);box-shadow:0 16px 40px rgba(25,21,18,.14);}
+.v360-kaart img{display:block;width:100%;aspect-ratio:2/1;object-fit:cover;background:#17110A;}
+.v360-badge{
+  position:absolute;top:10px;left:10px;display:inline-flex;align-items:center;gap:.3rem;
+  padding:.28rem .6rem;border-radius:100px;background:rgba(9,6,3,.62);color:#fff;
+  font-size:.66rem;font-weight:700;letter-spacing:.1em;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+}
+.v360-badge svg{width:12px;height:12px;}
+.v360-tekst{display:block;padding:.8rem 1rem 1rem;}
+.v360-kaart strong{display:block;font-family:var(--display);font-weight:500;font-size:1.06rem;letter-spacing:-.01em;}
+.v360-kaart small{display:block;margin-top:.2rem;font-size:.78rem;color:var(--muted);}
+.v360-leeg{color:var(--muted);font-size:.9rem;}
+
+.v360{position:fixed;inset:0;z-index:320;background:#0b0806;color:#fff;animation:fadeIn .22s ease;}
+.v360[hidden]{display:none;}
+.v360-vlak{position:absolute;inset:0;touch-action:none;}
+.v360-vlak .pnlm-container{background:#0b0806;font-family:var(--sans);}
+.v360-vlak .pnlm-load-box{border-radius:12px;background:rgba(255,255,255,.12);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font-size:.9rem;}
+.v360-vlak .pnlm-load-box p{margin:.3rem 0;}
+.v360-vlak .pnlm-lbar{border-color:rgba(255,255,255,.6);}
+.v360-vlak .pnlm-lbar-fill{background:var(--accent-2);}
+.v360-vlak .pnlm-about-msg,.v360-vlak .pnlm-controls-container{display:none !important;}
+.v360-kop{
+  position:absolute;top:0;left:0;right:0;z-index:5;display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;
+  padding:calc(12px + env(safe-area-inset-top,0px)) 14px 26px;
+  background:linear-gradient(rgba(9,6,3,.7),rgba(9,6,3,0));pointer-events:none;
+}
+.v360-kop > *{pointer-events:auto;}
+.v360-titel{display:flex;flex-direction:column;gap:.15rem;min-width:0;}
+.v360-titel strong{font-family:var(--display);font-weight:500;font-size:1.15rem;letter-spacing:-.01em;text-shadow:0 1px 8px rgba(0,0,0,.5);}
+.v360-titel span{font-size:.78rem;color:rgba(255,255,255,.75);}
+.v360 .lb-nav{z-index:5;}
+.v360-voet{
+  position:absolute;left:0;right:0;bottom:0;z-index:5;display:flex;flex-direction:column;align-items:center;gap:.6rem;
+  padding:30px 14px calc(14px + env(safe-area-inset-bottom,0px));
+  background:linear-gradient(rgba(9,6,3,0),rgba(9,6,3,.7));pointer-events:none;
+}
+.v360-voet > *{pointer-events:auto;}
+.v360-tip{font-size:.78rem;color:rgba(255,255,255,.8);text-align:center;transition:opacity .4s;}
+.v360-tip.weg{opacity:0;}
+.v360-knoppen{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;}
+.v360-knoppen:empty{display:none;}
+.v360-knop{
+  display:inline-flex;align-items:center;gap:.4rem;padding:.5rem .9rem;border-radius:100px;border:1px solid rgba(255,255,255,.22);
+  background:rgba(255,255,255,.12);color:#fff;font-family:var(--sans);font-size:.78rem;font-weight:600;cursor:pointer;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:background .2s;
+}
+.v360-knop:hover{background:rgba(255,255,255,.24);}
+.v360-knop.aan{background:var(--accent);border-color:var(--accent);}
+.v360-knop[hidden]{display:none;}
+.v360-vr{position:absolute;inset:0;z-index:10;background:#000;}
+.v360-vr[hidden]{display:none;}
+.v360-vr a-scene{position:absolute;inset:0;width:100%;height:100%;}
+.v360-vr .v360-vr-sluit{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:14px;z-index:20;}
+@media(max-width:640px){
+  .v360 .lb-nav{display:none;}
+  .v360-titel strong{font-size:1rem;}
+}
+
 /* terug naar boven */
 .naar-boven{
   position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:140;
@@ -2486,6 +2552,7 @@ body.sleepbezig{-webkit-user-select:none;user-select:none;cursor:grabbing;}
       <li><button class="tabknop" data-tab="album" onclick="toonTab('album')">Album</button></li>
       <li><button class="tabknop" data-tab="kaart" onclick="toonTab('kaart')">Kaart</button></li>
       <li><button class="tabknop" data-tab="spots" onclick="toonTab('spots')">Spots</button></li>
+      <li><button class="tabknop" data-tab="360" onclick="toonTab('360')">360&deg;</button></li>
       <li><button class="tabknop" data-tab="info" onclick="toonTab('info')">Info</button></li>
     </ul>
     <span class="nav-knoppen"><button class="weerknop slotknop" id="slotKnop" type="button" onclick="slotKlik()" title="Vergrendeld — tik om in te loggen" aria-label="Inloggen of vergrendelen"><svg class="slot-dicht" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2.2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15.5" r="1.2" fill="currentColor"/></svg><svg class="slot-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2.2"/><path d="M8 10.5V7.5a4 4 0 0 1 7.6-1.8"/><circle cx="12" cy="15.5" r="1.2" fill="currentColor"/></svg></button>
@@ -2786,6 +2853,20 @@ body.sleepbezig{-webkit-user-select:none;user-select:none;cursor:grabbing;}
 </div>
 
 <!-- ═══ TAB: INFO ═══ -->
+<!-- ═══ TAB: 360° ═══ -->
+<div class="view" id="view-360" hidden>
+<section class="band" id="rondom">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <p class="sec-label">Kijk om je heen</p>
+      <h2 class="sec-title">In 360&deg;</h2>
+      <p class="sec-sub">Een paar momenten zoals ze echt waren: niet een uitsnede, maar alles om ons heen. Tik op een foto, sleep om rond te kijken en knijp om in te zoomen. Op je telefoon kun je ook gewoon de telefoon draaien; met een VR-bril stap je er middenin.</p>
+    </div>
+    <div class="v360-raster reveal" id="v360Raster"></div>
+  </div>
+</section>
+</div>
+
 <div class="view" id="view-info" hidden>
 <section class="band" id="tips">
   <div class="wrap">
@@ -2951,11 +3032,31 @@ body.sleepbezig{-webkit-user-select:none;user-select:none;cursor:grabbing;}
     <button data-tab="album" onclick="toonTab('album')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h11A1.5 1.5 0 0 1 17 7.5v9A1.5 1.5 0 0 1 15.5 18h-11A1.5 1.5 0 0 1 3 16.5Z"/><path d="M20 8v10.5A1.5 1.5 0 0 1 18.5 20H7"/><circle cx="7.5" cy="10.5" r="1.2"/><path d="M17 14l-3.5-3.5L6 18"/></svg><span>Album</span></button>
     <button data-tab="kaart" onclick="toonTab('kaart')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg><span>Kaart</span></button>
     <button data-tab="spots" onclick="toonTab('spots')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 21a3 3 0 0 1-3-3l1.5-8A2.5 2.5 0 0 1 7 8h1v10a3 3 0 0 1-2 3Z"/><path d="M18 21a3 3 0 0 0 3-3l-1.5-8A2.5 2.5 0 0 0 17 8h-1v10a3 3 0 0 0 2 3Z"/><path d="M10 9V4h4v5"/><path d="M8 13h8"/></svg><span>Spots</span></button>
+    <button data-tab="360" onclick="toonTab('360')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="9" ry="3.6"/><path d="M12 3a14 14 0 0 1 0 18"/><path d="M12 3a14 14 0 0 0 0 18"/></svg><span>360&deg;</span></button>
     <button data-tab="info" onclick="toonTab('info')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.6h.01"/></svg><span>Info</span></button>
   </div>
 </nav>
 
 <button class="naar-boven" id="naarBoven" onclick="naarBoven()" aria-label="Terug naar boven"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button>
+
+<!-- ── 360°-VIEWER ── -->
+<div class="v360" id="v360" hidden role="dialog" aria-modal="true" aria-label="360&deg;-foto bekijken">
+  <div class="v360-vlak" id="v360Vlak"></div>
+  <div class="v360-kop">
+    <div class="v360-titel"><strong id="v360Titel"></strong><span id="v360Sub"></span></div>
+    <button class="lb-btn" onclick="sluit360()" title="Sluiten (Esc)" aria-label="Sluiten"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+  </div>
+  <button class="lb-nav prev" id="v360Prev" onclick="stap360(-1)" aria-label="Vorige">&#8249;</button>
+  <button class="lb-nav next" id="v360Next" onclick="stap360(1)" aria-label="Volgende">&#8250;</button>
+  <div class="v360-voet">
+    <span class="v360-tip" id="v360Tip">Sleep om rond te kijken &middot; knijp om te zoomen</span>
+    <div class="v360-knoppen">
+      <button type="button" class="v360-knop" id="v360Gyro" hidden onclick="gyro360()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18h2"/></svg><span>Draai je telefoon</span></button>
+      <button type="button" class="v360-knop" id="v360Vr" hidden onclick="vr360()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5A2.5 2.5 0 0 1 5.5 6h13A2.5 2.5 0 0 1 21 8.5v6a2.5 2.5 0 0 1-2.5 2.5h-3l-2-2.5h-3L8.5 17h-3A2.5 2.5 0 0 1 3 14.5Z"/><circle cx="8.5" cy="11.5" r="1.6"/><circle cx="15.5" cy="11.5" r="1.6"/></svg><span>VR-bril</span></button>
+    </div>
+  </div>
+  <div class="v360-vr" id="v360VrVlak" hidden></div>
+</div>
 
 <!-- ── LIGHTBOX ── -->
 <div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Foto groot bekijken">
@@ -11373,8 +11474,239 @@ function openFromHash() {
   setTimeout(() => openLightbox(id, Math.min(+m[2], lijst.length - 1)), 250);
 }
 
+// ══════════ 360° ══════════
+// Foto's van de Ricoh Theta (equirectangulair, 2:1). Voor nu een vaste lijst in de
+// repo (img/360/, met een kleine webp als voorproefje). De viewer (Pannellum, lib/)
+// wordt pas geladen als iemand een foto opent; de VR-scène (A-Frame, lib/, 1,3 MB)
+// pas bij een tik op 'VR-bril' — die knop staat er alleen als de browser WebXR kan.
+const FOTOS360 = [
+  // datum: ISO-tijd uit de EXIF van het origineel (nog in te vullen); plek: waar het was
+  {src: 'img/360/arusha-galerie-beelden.jpg', titel: 'Tussen de beelden van het Cultural Heritage Centre', plek: 'Arusha'},
+  {src: 'img/360/arusha-galerie-schilderijen.jpg', titel: 'De schilderijenzaal', plek: 'Arusha'},
+  {src: 'img/360/jeep-vieren.jpg', titel: 'Met z\u2019n vieren in de jeep', plek: 'Onderweg'},
+  {src: 'img/360/open-dak-bush.jpg', titel: 'Met het dak open door de bush', plek: 'Tarangire'},
+  {src: 'img/360/stofvlakte-boma.jpg', titel: 'Stofvlakte bij een boma', plek: 'Onderweg'},
+  {src: 'img/360/ngorongoro-uitkijkpunt.jpg', titel: 'Uitkijkpunt boven de Ngorongorokrater', plek: 'Ngorongoro'},
+  {src: 'img/360/jeep-krater.jpg', titel: 'Vanuit de jeep, de kraterrand rondom', plek: 'Ngorongoro'},
+  {src: 'img/360/kratermeer-flamingos.jpg', titel: 'Het kratermeer vol flamingo\u2019s', plek: 'Ngorongoro'},
+  {src: 'img/360/open-dak-savanne.jpg', titel: 'Met open dak over de savanne', plek: 'Serengeti'},
+  {src: 'img/360/wolken-savanne.jpg', titel: 'Wolkenlucht boven de savanne', plek: 'Serengeti'},
+  {src: 'img/360/afgebrande-savanne.jpg', titel: 'Langs de afgebrande savanne', plek: 'Serengeti'},
+  {src: 'img/360/jeep-vieren-lachend.jpg', titel: 'Vier blije gezichten in de jeep', plek: 'Serengeti'},
+  {src: 'img/360/kamp.jpg', titel: 'Voor de tent, net voor de bui', plek: 'In het kamp'}
+];
+// Onderregel: plek · datum (· dag van de reis, als de datum bekend is)
+function sub360(f) {
+  const delen = [];
+  if (f.plek) delen.push(f.plek);
+  if (f.datum) {
+    delen.push(fmtTaken(f.datum));
+    const id = dayForDate(f.datum);
+    const d = id && DAYS.find(x => x.id === id);
+    if (d) delen.push(d.days + ' \u00b7 ' + dagNaam(d));
+  }
+  return delen.join('  \u00b7  ');
+}
+const SVG360 = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="9" ry="3.6"/><path d="M12 3a14 14 0 0 1 0 18"/><path d="M12 3a14 14 0 0 0 0 18"/></svg>';
+var _v360 = {i: -1, pn: null, laad: null, laadVr: null, vr: null, tipT: null};
+
+function klein360(f) { return f.src.replace(/\.jpg$/, '-klein.webp'); }
+
+function render360() {
+  const el = document.getElementById('v360Raster');
+  if (!el) return;
+  if (!FOTOS360.length) { el.innerHTML = '<p class="v360-leeg">Nog geen 360°-foto’s.</p>'; return; }
+  el.innerHTML = FOTOS360.map((f, i) =>
+    '<button type="button" class="v360-kaart" onclick="open360(' + i + ')" aria-label="' + esc(f.titel) + ' in 360° bekijken">' +
+      '<img src="' + klein360(f) + '" alt="" loading="lazy" decoding="async">' +
+      '<span class="v360-badge">' + SVG360 + '360°</span>' +
+      '<span class="v360-tekst"><strong>' + esc(f.titel) + '</strong>' + (sub360(f) ? '<small>' + esc(sub360(f)) + '</small>' : '') + '</span>' +
+    '</button>').join('');
+}
+
+function laadScript(src) {
+  return new Promise((ok, fout) => {
+    const s = document.createElement('script');
+    s.src = src; s.onload = ok; s.onerror = () => fout(new Error('kon ' + src + ' niet laden'));
+    document.head.appendChild(s);
+  });
+}
+function laadStijl(href) {
+  if (document.querySelector('link[href="' + href + '"]')) return;
+  const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = href;
+  document.head.appendChild(l);
+}
+function laadPannellum() {
+  if (window.pannellum) return Promise.resolve();
+  if (!_v360.laad) {
+    laadStijl('lib/pannellum.css');
+    _v360.laad = laadScript('lib/pannellum.js').catch(e => { _v360.laad = null; throw e; });
+  }
+  return _v360.laad;
+}
+function laadAframe() {
+  if (window.AFRAME) return Promise.resolve();
+  if (!_v360.laadVr) _v360.laadVr = laadScript('lib/aframe.min.js').catch(e => { _v360.laadVr = null; throw e; });
+  return _v360.laadVr;
+}
+
+function open360(i) {
+  if (!FOTOS360[i]) return;
+  document.getElementById('v360').hidden = false;
+  document.body.style.overflow = 'hidden';
+  const meer = FOTOS360.length > 1;
+  document.getElementById('v360Prev').hidden = !meer;
+  document.getElementById('v360Next').hidden = !meer;
+  // VR-knop alleen als deze browser een bril kan aansturen (Quest, Vision Pro, pc-bril)
+  const vrKnop = document.getElementById('v360Vr');
+  if (vrKnop && !vrKnop.dataset.gecheckt) {
+    vrKnop.dataset.gecheckt = '1';
+    try {
+      if (navigator.xr && navigator.xr.isSessionSupported) {
+        navigator.xr.isSessionSupported('immersive-vr').then(ok => { vrKnop.hidden = !ok; }).catch(() => {});
+      }
+    } catch (e) {}
+  }
+  toon360(i);
+}
+
+async function toon360(i) {
+  const f = FOTOS360[i];
+  if (!f) return;
+  _v360.i = i;
+  document.getElementById('v360Titel').textContent = f.titel;
+  document.getElementById('v360Sub').textContent = [sub360(f), (i + 1) + ' / ' + FOTOS360.length].filter(Boolean).join('  ·  ');
+  const vlak = document.getElementById('v360Vlak');
+  const gyroKnop = document.getElementById('v360Gyro');
+  const gyroWas = !!(_v360.pn && _v360.pn.isOrientationActive && _v360.pn.isOrientationActive());
+  if (_v360.pn) { try { _v360.pn.destroy(); } catch (e) {} _v360.pn = null; }
+  vlak.innerHTML = '<div class="lb-laden"><span class="lb-spin" aria-hidden="true"></span>Foto laden…</div>';
+  try { await laadPannellum(); }
+  catch (e) {
+    vlak.innerHTML = '<div class="lb-fout" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)"><strong>Kon de 360°-viewer niet laden.</strong> Controleer je internet en probeer het nog eens.</div>';
+    return;
+  }
+  if (_v360.i !== i || document.getElementById('v360').hidden) return;
+  vlak.innerHTML = '';
+  _v360.pn = pannellum.viewer(vlak, {
+    type: 'equirectangular', panorama: f.src, autoLoad: true,
+    showControls: false, compass: false,
+    hfov: 95, minHfov: 40, maxHfov: 120,
+    autoRotate: -4, autoRotateInactivityDelay: 8000, friction: 0.15,
+    strings: {
+      loadingLabel: 'Foto laden…', loadButtonLabel: 'Tik om te laden',
+      genericWebGLError: 'Deze browser kan de 360°-foto niet tonen (geen WebGL).',
+      textureSizeError: 'Deze foto is te groot voor dit apparaat (%s px, maximaal %s px).',
+      unknownError: 'Er ging iets mis bij het laden van de foto.'
+    }
+  });
+  if (gyroKnop) {
+    gyroKnop.hidden = !(_v360.pn.isOrientationSupported && _v360.pn.isOrientationSupported());
+    gyroKnop.classList.remove('aan');
+  }
+  if (gyroWas) {
+    // de vorige foto werd met de telefoon bekeken: zo doorgaan
+    _v360.pn.on('load', () => { try { _v360.pn.stopAutoRotate(); _v360.pn.startOrientation(); if (gyroKnop) gyroKnop.classList.add('aan'); } catch (e) {} });
+  }
+  tip360('Sleep om rond te kijken  ·  knijp om te zoomen');
+}
+
+function tip360(tekst) {
+  const t = document.getElementById('v360Tip');
+  if (!t) return;
+  if (tekst) t.textContent = tekst;
+  t.classList.remove('weg');
+  clearTimeout(_v360.tipT);
+  _v360.tipT = setTimeout(() => t.classList.add('weg'), 5000);
+}
+
+function stap360(d) {
+  if (_v360.i < 0 || FOTOS360.length < 2) return;
+  vrSluit360();
+  toon360((_v360.i + d + FOTOS360.length) % FOTOS360.length);
+}
+
+function sluit360() {
+  vrSluit360();
+  if (_v360.pn) { try { _v360.pn.destroy(); } catch (e) {} _v360.pn = null; }
+  document.getElementById('v360Vlak').innerHTML = '';
+  document.getElementById('v360').hidden = true;
+  _v360.i = -1;
+  const lb = document.getElementById('lightbox'), sm = document.getElementById('storyModal');
+  if ((!lb || lb.hidden) && (!sm || sm.hidden)) document.body.style.overflow = '';
+}
+
+// Rondkijken door de telefoon te draaien. iPhone vraagt daar één keer toestemming
+// voor (Pannellum regelt dat); zegt iemand nee, dan blijft slepen gewoon werken.
+function gyro360() {
+  const pn = _v360.pn, k = document.getElementById('v360Gyro');
+  if (!pn || !k) return;
+  if (pn.isOrientationActive()) { pn.stopOrientation(); k.classList.remove('aan'); tip360('Rondkijken door te slepen'); return; }
+  try { pn.stopAutoRotate(); pn.startOrientation(); } catch (e) {}
+  setTimeout(() => {
+    const aan = !!pn.isOrientationActive();
+    k.classList.toggle('aan', aan);
+    tip360(aan ? 'Draai je telefoon om rond te kijken' : 'Geen toestemming voor beweging — zet in Safari ‚Beweging en richting’ aan, of blijf slepen');
+  }, 1500);
+}
+
+// VR-bril: dezelfde foto als bol om je heen in een WebXR-scène (A-Frame).
+async function vr360() {
+  const f = FOTOS360[_v360.i];
+  if (!f) return;
+  const vlak = document.getElementById('v360VrVlak');
+  vlak.hidden = false;
+  vlak.innerHTML = '<div class="lb-laden"><span class="lb-spin" aria-hidden="true"></span>VR laden…</div>';
+  const sluit = document.createElement('button');
+  sluit.type = 'button'; sluit.className = 'lb-btn v360-vr-sluit'; sluit.title = 'Terug'; sluit.setAttribute('aria-label', 'VR sluiten');
+  sluit.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+  sluit.onclick = vrSluit360;
+  vlak.appendChild(sluit);
+  try { await laadAframe(); }
+  catch (e) {
+    vlak.innerHTML = '<div class="lb-fout" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)"><strong>Kon de VR-weergave niet laden.</strong> Controleer je internet en probeer het nog eens.</div>';
+    vlak.appendChild(sluit);
+    return;
+  }
+  if (vlak.hidden) return;
+  if (_v360.pn) { try { _v360.pn.stopOrientation(); _v360.pn.stopAutoRotate(); } catch (e) {} }
+  vlak.innerHTML = '';
+  const scene = document.createElement('a-scene');
+  scene.setAttribute('embedded', '');
+  scene.setAttribute('loading-screen', 'enabled: false');
+  scene.setAttribute('device-orientation-permission-ui', 'enabled: false');
+  scene.setAttribute('vr-mode-ui', 'enabled: true');
+  scene.innerHTML = '<a-sky src="' + f.src + '" rotation="0 -90 0"></a-sky>' +
+    '<a-entity camera look-controls="reverseMouseDrag: true" position="0 1.6 0"></a-entity>';
+  vlak.appendChild(scene);
+  vlak.appendChild(sluit);
+  _v360.vr = scene;
+  scene.addEventListener('loaded', () => { if (_v360.vr === scene) { try { scene.enterVR(); } catch (e) {} } }, {once: true});
+  // bril afgezet of VR verlaten: terug naar de gewone viewer
+  scene.addEventListener('exit-vr', () => { if (_v360.vr === scene) setTimeout(vrSluit360, 50); });
+}
+function vrSluit360() {
+  const vlak = document.getElementById('v360VrVlak');
+  if (!vlak || vlak.hidden) return;
+  const sc = _v360.vr; _v360.vr = null;
+  if (sc) {
+    try { if (sc.is && sc.is('vr-mode')) sc.exitVR(); } catch (e) {}
+    try { if (sc.parentNode) sc.parentNode.removeChild(sc); } catch (e) {}
+  }
+  vlak.innerHTML = '';
+  vlak.hidden = true;
+}
+
+document.addEventListener('keydown', e => {
+  const v = document.getElementById('v360');
+  if (!v || v.hidden) return;
+  if (e.key === 'Escape') { if (_v360.vr) vrSluit360(); else sluit360(); }
+  else if (e.key === 'ArrowRight') stap360(1);
+  else if (e.key === 'ArrowLeft') stap360(-1);
+});
+
 // ══════════ TABBLADEN ══════════
-const TABS = ['route', 'verblijven', 'album', 'kaart', 'spots', 'info'];
+const TABS = ['route', 'verblijven', 'album', 'kaart', 'spots', '360', 'info'];
 var _tab = 'route';
 
 function toonTab(naam, stil) {
@@ -11435,6 +11767,7 @@ toonLokaleKnop();
 renderCollages();
 loadWeather();
 renderSpots();
+render360();
 renderFavs();
 renderCijfers();
 markeerVandaag();
